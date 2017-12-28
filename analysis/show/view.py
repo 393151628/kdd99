@@ -20,7 +20,7 @@ class TestGeo(Resource):
 
         res = [{'name': k, 'ip': v} for k, v in result.items()]
         data = {
-            'res': res
+            'res': res[:10]
         }
         return data
 
