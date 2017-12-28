@@ -1,27 +1,22 @@
 # -*- coding: utf-8 -*-
-import threading
+import os
+
+basedir = os.path.abspath(os.path.dirname(__file__))
 
 
-class SingletonQueue(object):
-    __instance = None
-    lock = threading.Lock()
-    queue = []
+class DevelopConfig(object):
+    TESTING = True
+    DEBUG = True
 
-    def __init__(self):
-        pass
-
-    def __new__(cls, *args, **kwd):
-        if SingletonQueue.__instance is None:
-            SingletonQueue.__instance = object.__new__(cls, *args, **kwd)
-        return SingletonQueue.__instance
-
-    def get_queue(self, data):
-        try:
-            self.lock.acquire()
-            self.queue.append(data)
-            self.queue = self.queue[-2:]
-            return self.queue
-        finally:
-            self.lock.release()
+    MONGODB_SETTINGS = {
+            'db': 'kdd99',
+            'host': '172.28.20.124',
+            'port': 27017,
+            'username': 'kdd99',
+            'password': 'kdd99',
+            }
 
 
+configs = {
+    'dev': DevelopConfig,
+}

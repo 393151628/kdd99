@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import json
 
-from config import SingletonQueue
+from .handle import SingletonQueue
 from ..receive_data import receive_blueprint
 from flask import request
 from flask_restful import Api, Resource
 
-receive = Api(receive_blueprint)
+api = Api(receive_blueprint)
 
 
 def create_queue(data):
@@ -27,4 +27,4 @@ class ReciveData(Resource):
         return 'success'
 
 
-receive.add_resource(ReciveData, '/')
+api.add_resource(ReciveData, '/')
