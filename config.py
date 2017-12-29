@@ -4,7 +4,7 @@ import os
 from analysis.utils.analysis_machine import load_model
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-model = load_model('my_model_321_20.h5')
+model = load_model(os.path.join(basedir, 'analysis', 'utils', 'ss_model_rej_20.h5'))
 
 
 class DevelopConfig(object):
