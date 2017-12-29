@@ -43,7 +43,7 @@ geo_map = {
     '厄瓜多尔': 'Ecuador',
     '叙利亚': 'Syria',
     '古巴': 'Cuba',
-    '台湾省': 'Taiwan',
+    '台湾省': 'China',
     '吉尔吉斯坦': 'Kyrgyzstan',
     '吉布提': 'Djibouti',
     '哈萨克斯坦': 'Kazakstan',

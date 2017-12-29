@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
 
+from analysis.utils.analysis_machine import load_model
+
 basedir = os.path.abspath(os.path.dirname(__file__))
+model = load_model('my_model_321_20.h5')
 
 
 class DevelopConfig(object):

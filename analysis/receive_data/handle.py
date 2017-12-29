@@ -1,11 +1,26 @@
 # -*- coding: utf-8 -*-
 import threading
 
+lock = threading.Lock()
+
+
+def lock(func):
+    def __wapper__(*args, **kwargs):
+        lock.acquire()
+        res = func(*args, **kwargs)
+        lock.release()
+        return res
+
+    return __wapper__
+
 
 class SingletonQueue(object):
     __instance = None
-    lock = threading.Lock()
-    queue = []
+    timestamp_current = 0
+    timestamp_last = 0
+    next_con = []
+    current_con = []
+    last_con = []
 
     def __init__(self):
         pass
@@ -15,13 +30,30 @@ class SingletonQueue(object):
             SingletonQueue.__instance = object.__new__(cls, *args, **kwd)
         return SingletonQueue.__instance
 
-    def get_queue(self, data):
-        try:
-            self.lock.acquire()
-            self.queue.append(data)
-            self.queue = self.queue[-2:]
-            return self.queue
-        finally:
-            self.lock.release()
 
+    @lock
+    def push_current_con(self, data):
+        self.current_con = self.current_con + data
 
+    @lock
+    def push_next_con(self, data):
+        self.next_con = self.next_con + data
+
+    @lock
+    def push_last_con(self, data):
+        self.last_con = self.last_con + data
+
+    @lock
+    def get_queue(self):
+        if self.current_con:
+            queue = [self.last_con, self.current_con]
+            self.last_con, self.current_con = self.current_con, self.next_con
+            self.timestamp_last, self.timestamp_current = self.timestamp_current, self.timestamp_current + 1
+        else:
+            queue = []
+        return queue
+
+    @lock
+    def clean_all(self):
+        self.last_con, self.current_con, self.next_con = []
+        self.timestamp_last, self.timestamp_current = 0

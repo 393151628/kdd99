@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask import Flask
+
 from .receive_data import receive_blueprint
 from .show import show_blueprint
 

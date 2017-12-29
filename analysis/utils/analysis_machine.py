@@ -1,15 +1,11 @@
+import json
 import logging
-import pandas as pd
 import numpy as np
+import pandas as pd
 import tensorflow as tf
-import seaborn as sn
-import matplotlib.pyplot as plt
 
-
+from pandas import DataFrame
 from sklearn import preprocessing
-from sklearn.model_selection import train_test_split
-from sklearn import metrics
-
 
 # Hyperparameters
 L1_HIDDEN = 375
@@ -17,112 +13,6 @@ L2_HIDDEN = 200
 L3_HIDDEN = 150
 L4_HIDDEN = 75
 L5_HIDDEN = 50
-DROPOUT_RATIO = 0.2
-
-# TODO: Datasets require different preparation, should isolate and give option
-TRAINING_FILE = 'KDDTrain+.txt'
-TEST_FILE = 'KDDTest+.txt'
-# TEST_FILE = 'kddcup.data.corrected'
-# TRAINING_FILE = 'kdd/kddcup.data10'
-# TEST_FILE = 'kdd/corrected'
-
-"""
-    Dictionary of attack types
-"""
-ATTACK_DICT = dict()
-ATTACK_DICT['normal'] = 'normal'
-
-ATTACK_DICT['apache2'] = 'dos'
-ATTACK_DICT['back'] = 'dos'
-ATTACK_DICT['land'] = 'dos'
-ATTACK_DICT['mailbomb'] = 'dos'
-ATTACK_DICT['neptune'] = 'dos'
-ATTACK_DICT['pod'] = 'dos'
-ATTACK_DICT['processtable'] = 'dos'
-ATTACK_DICT['smurf'] = 'dos'
-ATTACK_DICT['teardrop'] = 'dos'
-ATTACK_DICT['udpstorm'] = 'dos'
-
-ATTACK_DICT['buffer_overflow'] = 'u2r'
-ATTACK_DICT['loadmodule'] = 'u2r'
-ATTACK_DICT['perl'] = 'u2r'
-ATTACK_DICT['rootkit'] = 'u2r'
-ATTACK_DICT['ps'] = 'u2r'
-ATTACK_DICT['sqlattack'] = 'u2r'
-ATTACK_DICT['xterm'] = 'u2r'
-ATTACK_DICT['worm'] = 'u2r'
-ATTACK_DICT['snmpguess'] = 'u2r'
-
-
-ATTACK_DICT['httptunnel'] = 'r2l'
-ATTACK_DICT['spy'] = 'r2l'
-ATTACK_DICT['warezclient'] = 'r2l'
-ATTACK_DICT['ftp_write'] = 'r2l'
-ATTACK_DICT['guess_passwd'] = 'r2l'
-ATTACK_DICT['imap'] = 'r2l'
-ATTACK_DICT['multihop'] = 'r2l'
-ATTACK_DICT['named'] = 'r2l'
-ATTACK_DICT['phf'] = 'r2l'
-ATTACK_DICT['warezmaster'] = 'r2l'
-ATTACK_DICT['sendmail'] = 'r2l'
-ATTACK_DICT['snmpgetattack'] = 'r2l'
-ATTACK_DICT['xlock'] = 'r2l'
-ATTACK_DICT['xsnoop'] = 'r2l'
-
-ATTACK_DICT['ipsweep'] = 'probe'
-ATTACK_DICT['mscan'] = 'probe'
-ATTACK_DICT['nmap'] = 'probe'
-ATTACK_DICT['portsweep'] = 'probe'
-ATTACK_DICT['saint'] = 'probe'
-ATTACK_DICT['satan'] = 'probe'
-
-"""
-    Dataset columns
-"""
-COLUMNS = [
-    'duration',
-    'protocol_type',
-    'service',
-    'flag',
-    'src_bytes',
-    'dst_bytes',
-    'land',
-    'wrong_fragment',
-    'urgent',
-    'hot',
-    'num_failed_logins',
-    'logged_in',
-    'num_compromised',
-    'root_shell',
-    'su_attempted',
-    'num_root',
-    'num_file_creations',
-    'num_shells',
-    'num_access_files',
-    'num_outbound_cmds',
-    'is_host_login',
-    'is_guest_login',
-    'count',
-    'srv_count',
-    'serror_rate',
-    'srv_serror_rate',
-    'rerror_rate',
-    'srv_rerror_rate',
-    'same_srv_rate',
-    'diff_srv_rate',
-    'srv_diff_host_rate',
-    'dst_host_count',
-    'dst_host_srv_count',
-    'dst_host_same_srv_rate',
-    'dst_host_diff_srv_rate',
-    'dst_host_same_src_port_rate',
-    'dst_host_srv_diff_host_rate',
-    'dst_host_serror_rate',
-    'dst_host_srv_serror_rate',
-    'dst_host_rerror_rate',
-    'dst_host_srv_rerror_rate',
-    'outcome',
-    'difficulty']
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -156,6 +46,27 @@ def encode_continuous_zscore(df, column):
     df[column] = (df[column] - df[column].mean()) / df[column].std()
 
 
+def equalize_columns(df):
+    """
+        Insert missing columns from df1 on df2
+    """
+    model_columns = ['duration', 'src_bytes', 'dst_bytes', 'count', 'srv_count',
+                     'serror_rate', 'srv_serror_rate', 'same_srv_rate', 'diff_srv_rate',
+                     'dst_host_count', 'dst_host_srv_count', 'dst_host_same_srv_rate',
+                     'dst_host_diff_srv_rate', 'dst_host_same_src_port_rate',
+                     'dst_host_srv_diff_host_rate', 'dst_host_serror_rate',
+                     'dst_host_srv_serror_rate', 'outcome', 'protocol_type.icmp',
+                     'protocol_type.tcp', 'protocol_type.udp', 'flag.OTH', 'flag.REJ',
+                     'flag.RSTO', 'flag.RSTOS0', 'flag.RSTR', 'flag.S0', 'flag.S1',
+                     'flag.S2', 'flag.S3', 'flag.SF', 'flag.SH', 'land.0', 'land.1']
+    for column in model_columns:
+        if column not in df.columns:
+            df[column] = pd.Series(0.5,
+                                   index=df.index)
+
+    return df
+
+
 def to_xy(df, target):
     """
         处理成tensor张量
@@ -176,198 +87,10 @@ def to_xy(df, target):
             [target]).astype(np.float32)
 
 
-def equalize_columns(df1, df2):
-    """
-        Insert missing columns from df1 on df2
-    """
-    for column in df1.columns:
-        if column not in df2.columns:
-            df2[column] = pd.Series(0.5,
-                                    index=df2.index)
-
-    return df2
-
-
-def outcome_to_type(df):
-    for i, row in df.iterrows():
-        df.set_value(i, 'outcome', ATTACK_DICT[row['outcome']])
-
-    return df
-
-
-def setup_data(training_data, test_data, sample=None):
-    # Reading training set
-    df_train = pd.read_csv(training_data, header=None)
-    if sample:
-        df_train = df_train.sample(frac=sample)
-    logger.info("Training with {0} rows.".format(len(df_train)))
-
-    # Reading validation set
-    df_test = pd.read_csv(test_data, header=None)
-    logger.info("Testing with {0} rows.".format(len(df_test)))
-
-    # Dropping NaNs for now
-    df_train.dropna(inplace=True, axis=1)
-    df_test.dropna(inplace=True, axis=1)
-    df_train.columns = COLUMNS
-    df_test.columns = COLUMNS
-    # df_test.columns = COLUMNS[0:-1]
-    # df_train['outcome'] = df_train['outcome'].apply(
-    #                         lambda o: o[:-1])
-    # df_test['outcome'] = df_test['outcome'].apply(lambda o: o[:-1])
-
-    df_train.drop('difficulty', inplace=True, axis=1)  # For NSL-KDD
-    df_test.drop('difficulty', inplace=True, axis=1)  # For NSL-KDD
-    df_train.drop('wrong_fragment', inplace=True, axis=1)  # For NSL-KDD
-    df_test.drop('wrong_fragment', inplace=True, axis=1)  # For NSL-KDD
-    df_train.drop('urgent', inplace=True, axis=1)  # For NSL-KDD
-    df_test.drop('urgent', inplace=True, axis=1)  # For NSL-KDD
-    df_train.drop('hot', inplace=True, axis=1)  # For NSL-KDD
-    df_test.drop('hot', inplace=True, axis=1)  # For NSL-KDD
-    df_train.drop('num_failed_logins', inplace=True, axis=1)  # For NSL-KDD
-    df_test.drop('num_failed_logins', inplace=True, axis=1)  # For NSL-KDD
-    df_train.drop('logged_in', inplace=True, axis=1)  # For NSL-KDD
-    df_test.drop('logged_in', inplace=True, axis=1)  # For NSL-KDD
-    df_train.drop('num_compromised', inplace=True, axis=1)  # For NSL-KDD
-    df_test.drop('num_compromised', inplace=True, axis=1)  # For NSL-KDD
-    df_train.drop('root_shell', inplace=True, axis=1)  # For NSL-KDD
-    df_test.drop('root_shell', inplace=True, axis=1)  # For NSL-KDD
-    df_train.drop('su_attempted', inplace=True, axis=1)  # For NSL-KDD
-    df_test.drop('su_attempted', inplace=True, axis=1)  # For NSL-KDD
-    df_train.drop('num_root', inplace=True, axis=1)  # For NSL-KDD
-    df_test.drop('num_root', inplace=True, axis=1)  # For NSL-KDD
-    df_train.drop('num_file_creations', inplace=True, axis=1)  # For NSL-KDD
-    df_test.drop('num_file_creations', inplace=True, axis=1)  # For NSL-KDD
-    df_train.drop('num_shells', inplace=True, axis=1)  # For NSL-KDD
-    df_test.drop('num_shells', inplace=True, axis=1)  # For NSL-KDD
-    df_train.drop('num_access_files', inplace=True, axis=1)  # For NSL-KDD
-    df_test.drop('num_access_files', inplace=True, axis=1)  # For NSL-KDD
-    df_train.drop('num_outbound_cmds', inplace=True, axis=1)  # For NSL-KDD
-    df_test.drop('num_outbound_cmds', inplace=True, axis=1)  # For NSL-KDD
-    df_train.drop('is_host_login', inplace=True, axis=1)  # For NSL-KDD
-    df_test.drop('is_host_login', inplace=True, axis=1)  # For NSL-KDD
-    df_train.drop('is_guest_login', inplace=True, axis=1)  # For NSL-KDD
-    df_test.drop('is_guest_login', inplace=True, axis=1)  # For NSL-KDD
-
-
-    # Classify all attacks together for now
-    # df_train['outcome'] = df_train['outcome'].apply(
-    #                     lambda o: 'normal' if o == 'normal' else 'attack')
-    #
-    # df_test['outcome'] = df_test['outcome'].apply(
-    #                     lambda o: 'normal' if o == 'normal' else 'attack')
-    df_train['outcome'] = df_train['outcome'].apply(
-                            lambda row:ATTACK_DICT[row])
-    df_test['outcome'] = df_test['outcome'].apply(
-                            lambda row: ATTACK_DICT[row])
-
-    df_train = df_train[df_train['outcome'].isin(['normal', 'probe','dos'])]
-    df_test = df_test[df_test['outcome'].isin(['normal', 'probe', 'dos'])]
-
-    # Treating the features (Training set)
-    encode_continuous_zscore(df_train, 'duration')
-    encode_one_hot(df_train, 'protocol_type')
-    encode_one_hot(df_train, 'service')
-    encode_one_hot(df_train, 'flag')
-    encode_continuous_zscore(df_train, 'src_bytes')
-    encode_continuous_zscore(df_train, 'dst_bytes')
-    encode_one_hot(df_train, 'land')
-    # encode_continuous_zscore(df_train, 'wrong_fragment')
-    # encode_continuous_zscore(df_train, 'urgent')
-    # encode_continuous_zscore(df_train, 'hot')
-    # encode_continuous_zscore(df_train, 'num_failed_logins')
-    # encode_one_hot(df_train, 'logged_in')
-    # encode_continuous_zscore(df_train, 'num_compromised')
-    # encode_continuous_zscore(df_train, 'root_shell')
-    # encode_continuous_zscore(df_train, 'su_attempted')
-    # encode_continuous_zscore(df_train, 'num_root')
-    # encode_continuous_zscore(df_train, 'num_file_creations')
-    # encode_continuous_zscore(df_train, 'num_shells')
-    # encode_continuous_zscore(df_train, 'num_access_files')
-    # encode_continuous_zscore(df_train, 'num_outbound_cmds')
-    # encode_one_hot(df_train, 'is_host_login')
-    # encode_one_hot(df_train, 'is_guest_login')
-    encode_continuous_zscore(df_train, 'count')
-    encode_continuous_zscore(df_train, 'srv_count')
-    encode_continuous_zscore(df_train, 'serror_rate')
-    encode_continuous_zscore(df_train, 'srv_serror_rate')
-    encode_continuous_zscore(df_train, 'rerror_rate')
-    encode_continuous_zscore(df_train, 'srv_rerror_rate')
-    encode_continuous_zscore(df_train, 'same_srv_rate')
-    encode_continuous_zscore(df_train, 'diff_srv_rate')
-    encode_continuous_zscore(df_train, 'srv_diff_host_rate')
-    encode_continuous_zscore(df_train, 'dst_host_count')
-    encode_continuous_zscore(df_train, 'dst_host_srv_count')
-    encode_continuous_zscore(df_train, 'dst_host_same_srv_rate')
-    encode_continuous_zscore(df_train, 'dst_host_diff_srv_rate')
-    encode_continuous_zscore(df_train, 'dst_host_same_src_port_rate')
-    encode_continuous_zscore(df_train, 'dst_host_srv_diff_host_rate')
-    encode_continuous_zscore(df_train, 'dst_host_serror_rate')
-    encode_continuous_zscore(df_train, 'dst_host_srv_serror_rate')
-    encode_continuous_zscore(df_train, 'dst_host_rerror_rate')
-    encode_continuous_zscore(df_train, 'dst_host_srv_rerror_rate')
-    encode_categorical_index(df_train, 'outcome')
-
-    # Treating the features (Validation set)
-    encode_continuous_zscore(df_test, 'duration')
-    encode_one_hot(df_test, 'protocol_type')
-    encode_one_hot(df_test, 'service')
-    encode_one_hot(df_test, 'flag')
-    encode_continuous_zscore(df_test, 'src_bytes')
-    encode_continuous_zscore(df_test, 'dst_bytes')
-    encode_one_hot(df_test, 'land')
-    # encode_continuous_zscore(df_test, 'wrong_fragment')
-    # encode_continuous_zscore(df_test, 'urgent')
-    # encode_continuous_zscore(df_test, 'hot')
-    # encode_continuous_zscore(df_test, 'num_failed_logins')
-    # encode_one_hot(df_test, 'logged_in')
-    # encode_continuous_zscore(df_test, 'num_compromised')
-    # encode_continuous_zscore(df_test, 'root_shell')
-    # encode_continuous_zscore(df_test, 'su_attempted')
-    # encode_continuous_zscore(df_test, 'num_root')
-    # encode_continuous_zscore(df_test, 'num_file_creations')
-    # encode_continuous_zscore(df_test, 'num_shells')
-    # encode_continuous_zscore(df_test, 'num_access_files')
-    # encode_continuous_zscore(df_test, 'num_outbound_cmds')
-    # encode_one_hot(df_test, 'is_host_login')
-    # encode_one_hot(df_test, 'is_guest_login')
-    encode_continuous_zscore(df_test, 'count')
-    encode_continuous_zscore(df_test, 'srv_count')
-    encode_continuous_zscore(df_test, 'serror_rate')
-    encode_continuous_zscore(df_test, 'srv_serror_rate')
-    encode_continuous_zscore(df_test, 'rerror_rate')
-    encode_continuous_zscore(df_test, 'srv_rerror_rate')
-    encode_continuous_zscore(df_test, 'same_srv_rate')
-    encode_continuous_zscore(df_test, 'diff_srv_rate')
-    encode_continuous_zscore(df_test, 'srv_diff_host_rate')
-    encode_continuous_zscore(df_test, 'dst_host_count')
-    encode_continuous_zscore(df_test, 'dst_host_srv_count')
-    encode_continuous_zscore(df_test, 'dst_host_same_srv_rate')
-    encode_continuous_zscore(df_test, 'dst_host_diff_srv_rate')
-    encode_continuous_zscore(df_test, 'dst_host_same_src_port_rate')
-    encode_continuous_zscore(df_test, 'dst_host_srv_diff_host_rate')
-    encode_continuous_zscore(df_test, 'dst_host_serror_rate')
-    encode_continuous_zscore(df_test, 'dst_host_srv_serror_rate')
-    encode_continuous_zscore(df_test, 'dst_host_rerror_rate')
-    encode_continuous_zscore(df_test, 'dst_host_srv_rerror_rate')
-    encode_categorical_index(df_test, 'outcome')
-
-    # Some NaNs appear again after the previous ops
-    df_train.dropna(inplace=True, axis=1)
-    df_test.dropna(inplace=True, axis=1)
-
-    # Insert missing columns
-    df_train = equalize_columns(df_test, df_train)
-    df_test = equalize_columns(df_train, df_test)
-
-    return df_train, df_test
-
-
-def train_model(x_train, y_train, x_val, y_val):
-    # ANN definition
+def load_model(model_name):
     model = tf.contrib.keras.models.Sequential()
     model.add(tf.contrib.keras.layers.Dense(L1_HIDDEN,
-                                            input_dim=x_train.shape[1],
+                                            input_dim=34,
                                             kernel_initializer='normal',
                                             activation='relu'))
     model.add(tf.contrib.keras.layers.Dropout(0.3))
@@ -381,7 +104,7 @@ def train_model(x_train, y_train, x_val, y_val):
     model.add(tf.contrib.keras.layers.Dropout(0.1))
     model.add(tf.contrib.keras.layers.Dense(L5_HIDDEN,
                                             activation='relu'))
-    model.add(tf.contrib.keras.layers.Dense(y_train.shape[1],
+    model.add(tf.contrib.keras.layers.Dense(3,
                                             activation='softmax'))
     model.compile(loss='categorical_crossentropy', optimizer='adam',
                   metrics=['accuracy'])
@@ -392,55 +115,225 @@ def train_model(x_train, y_train, x_val, y_val):
                                                        patience=5,
                                                        verbose=1,
                                                        mode='auto')
-    # model.fit(x_train, y_train, validation_data=(x_val, y_val),
-    #           callbacks=[], verbose=1, epochs=20)
-    # model.save_weights("s_model_321_20.h5")
 
-    model.load_weights('s_model_321_20.h5')
-
+    model.load_weights(model_name)
 
     return model
 
 
-def run_model(model, x_test, y_test):
-    pred = model.predict(x_test)
-    pred = np.argmax(pred, axis=1)
-    corr = np.argmax(y_test, axis=1)
+def setup_data(df_test):
+    '''
+    one_hot编码及归一化
+    :param df_test: Dataframe.
+    :return: Dataframe
+    '''
+    logger.info("Testing with {0} rows.".format(len(df_test)))
 
-    logger.info("Accuracy: {}".format(metrics.accuracy_score(corr, pred)))
-    logger.info("Recall: {}".format(metrics.recall_score(
-                                                    corr, pred, average=None)))
-    logger.info("Precision: {}".format(metrics.precision_score(corr, pred,
-                                                               average=None)))
-    logger.info("F1 Score: {}".format(metrics.f1_score(corr, pred,
-                                                       average=None)))
+    encode_continuous_zscore(df_test, 'duration')
+    encode_one_hot(df_test, 'protocol_type')
+    encode_one_hot(df_test, 'flag')
+    encode_continuous_zscore(df_test, 'src_bytes')
+    encode_continuous_zscore(df_test, 'dst_bytes')
+    encode_one_hot(df_test, 'land')
+    encode_continuous_zscore(df_test, 'count')
+    encode_continuous_zscore(df_test, 'srv_count')
+    encode_continuous_zscore(df_test, 'serror_rate')
+    encode_continuous_zscore(df_test, 'srv_serror_rate')
+    encode_continuous_zscore(df_test, 'same_srv_rate')
+    encode_continuous_zscore(df_test, 'diff_srv_rate')
+    encode_continuous_zscore(df_test, 'dst_host_count')
+    encode_continuous_zscore(df_test, 'dst_host_srv_count')
+    encode_continuous_zscore(df_test, 'dst_host_same_srv_rate')
+    encode_continuous_zscore(df_test, 'dst_host_diff_srv_rate')
+    encode_continuous_zscore(df_test, 'dst_host_same_src_port_rate')
+    encode_continuous_zscore(df_test, 'dst_host_srv_diff_host_rate')
+    encode_continuous_zscore(df_test, 'dst_host_serror_rate')
+    encode_continuous_zscore(df_test, 'dst_host_srv_serror_rate')
 
-    return corr, pred
+    df_test.dropna(inplace=True, axis=1)
+
+    # Insert missing columns
+    df_test = equalize_columns(df_test)
+
+    return df_test
 
 
-def main():
-    df_train, df_test = setup_data(TRAINING_FILE, TEST_FILE)
+def two_second_count(flow):
+    '''
+    count in two second
+    :param flow: list. contences all the records in two second
+    :return: Dataframe
+    '''
 
-    # Convert to TF format
-    x, y = to_xy(df_train, 'outcome')
+    tmp = []
+    flag_tcp = ['S0', 'S1', 'S2', 'S3', 'OTH', 'OTH', 'RSTR', 'SF', 'REJ']
+    flag_udp = ['S0', 'S1', 'SF']
+    data = DataFrame(flow)
+
+    def _flag(row):
+        if row['type'] == 'tcp':
+            #         print(flag_tcp[int(row['final_status'])-1])
+            if row['final_status'] < 9:
+                return flag_tcp[int(row['final_status']) - 1]
+            else:
+                return 'OTH'
+        elif row['type'] == 'udp':
+            if row['final_status'] < 3:
+                return flag_udp[int(row['final_status']) - 1]
+            else:
+                return 'SF'
+        else:
+            raise ValueError('New status')
+
+    for line in flow:
+        if line.get('tcp') or line.get('http') or line.get('udp') or line.get('dns'):
+            tmp.append(line.get('tcp') or line.get('http') or line.get('udp') or line.get('dns'))
+    test = pd.concat([DataFrame(tmp), data], axis=1)
+    test.drop(['add', 'ans', 'auth', 'client_latency', 'conn_type', 'direction', 'dst_group_id', 'flow_id',
+               'ifindex', 'in_pkts', 'is_reply', 'l7_proto', 'latency', 'method', 'ooorder_in_pkts', 'ooorder_out_pkts',
+               'opcode', 'out_pkts', 'protocol', 'referer', 'req_class', 'req_name',
+               'req_type', 'retran_in_pkts', 'retran_out_pkts', 'server_latency', 'src_group_id', 'status_code',
+               'trans_id', 'true_client_ip', 'unknown_conn', 'url', 'url_query',
+               'user_agent', 'xff', 'zero_win', 'aggregate_count', 'direction', 'dns',
+               'guid', 'http', 'probe', 'probe_ts', 'sample_count', 'tags', 'tcp',
+               'tcp_conn', 'udp', 'service_appid', 'open_ts'], inplace=True, axis=1)
+
+    test.rename(columns={'in_bytes': 'src_bytes'}, inplace=True)
+    test.rename(columns={'out_bytes': 'dst_bytes'}, inplace=True)
+    test['service'] = 'http'
+    test['protocol_type'] = test['type']
+    test = test[test['type'].isin(['tcp', 'udp'])]
+    port_tmp = test['sport'] == test['dport']
+    ip_tmp = test['sip'] == test['dip']
+    test['land'] = (port_tmp & ip_tmp).astype(int)
+
+    test['flag'] = test.apply(_flag, axis=1)
+    test = test.loc[:, ['dip', 'dport', 'duration', 'src_bytes', 'dst_bytes', 'sip', 'sport',
+                        'type', 'service', 'protocol_type', 'land', 'flag']]
+    test = test.dropna()
+
+    df_len = len(test)
+    same_dip_count = test.groupby(['dip'])['type'].count()
+    same_dport_count = test.groupby(['dip', 'dport'])['type'].count()
+    same_tmp = (same_dport_count / df_len).round(3)
+    test['count'] = test.apply(lambda row: same_dip_count[row['dip']], axis=1)
+    test['srv_count'] = test.apply(lambda row: same_dport_count[row['dip']][row['dport']], axis=1)
+    test['same_srv_rate'] = test.apply(lambda row: same_tmp[row['dip']][row['dport']], axis=1)
+    test['diff_srv_rate'] = test.apply(
+        lambda row: (same_dip_count[row['dip']] - same_dport_count[row['dip']][row['dport']]) / df_len, axis=1).round(3)
+
+    syn_test = test[(test['flag'] == 'S0') | (test['flag'] == 'S1') | (test['flag'] == 'S2') | (test['flag'] == 'S3')]
+    syn_ip_count = syn_test.groupby(['dip'])['type'].count().to_dict()
+    test.loc[:, 'serror_rate'] = test.apply(
+        lambda row: (syn_ip_count.get(row['dip']) or 0) / same_dip_count[row['dip']], axis=1).round(3)
+    syn_port_count = syn_test.groupby(['dip', 'dport'])['type'].count().to_dict()
+    test.loc[:, 'srv_serror_rate'] = test.apply(lambda row: (syn_port_count.get((row['dip'], row['dport'])) or 0) /
+                                                            same_dport_count[row['dip']][row['dport']], axis=1).round(3)
+
+    return test
+
+
+def hundred_count(df, first, second):
+    '''
+    统计前100条连接的信息
+    :param df: Dataframe. 经过two_second_count处理的dataframe
+    :param first: int. 前一秒的数据流连接数量
+    :param second: int. 后一秒的数据流连接数量
+    :return: Dataframe.
+    '''
+
+    tmp_100 = []
+
+    for i in range(first - 99, first + second - 99):
+        tmp_df = df[i:i + 100].to_dict(orient='records')
+        same_ip, same_ip_port, same_ip_syn, same_port_syn, same_dip_port_diff_sip, same_dip_diff_port = 0, 0, 0, 0, 0, 0
+        dip = tmp_df[-1]['dip']
+        dport = tmp_df[-1]['dport']
+        sip = tmp_df[-1]['sip']
+        #     print(dip, dport, sip)
+        for j in tmp_df:
+            if j['dip'] == dip:
+                same_ip += 1
+                if j['dport'] == dport:
+                    same_ip_port += 1
+                    if j['flag'] in ['S0', 'S1', 'S2', 'S3']:
+                        same_port_syn += 1
+                    if j['sip'] != sip:
+                        same_dip_port_diff_sip += 1
+                elif j['flag'] in ['S0', 'S1', 'S2', 'S3']:
+                    same_ip_syn += 1
+        tmp_100.append(
+            list(tmp_df[-1].values()) + [same_ip, same_ip_port, same_ip_port / 100, (same_ip - same_ip_port) / 100,
+                                         (same_ip - same_ip_port) / 100,
+                                         same_dip_port_diff_sip / same_ip_port, same_ip_syn / same_ip,
+                                         same_port_syn / same_ip_port])
+    df_test = DataFrame(tmp_100, columns=['dip', 'dport', 'duration', 'src_bytes', 'dst_bytes', 'sip', 'sport', 'type',
+                                          'service', 'protocol_type',
+                                          'land', 'flag', 'count', 'srv_count', 'same_srv_rate', 'diff_srv_rate',
+                                          'serror_rate', 'srv_serror_rate',
+                                          'dst_host_count', 'dst_host_srv_count', 'dst_host_same_srv_rate',
+                                          'dst_host_diff_srv_rate',
+                                          'dst_host_same_src_port_rate', 'dst_host_srv_diff_host_rate',
+                                          'dst_host_serror_rate',
+                                          'dst_host_srv_serror_rate']).round(3)
+    post_info = df_test[['dip', 'dport', 'sip', 'sport']].values.tolist()
+    df_test.drop(['dip', 'dport', 'sip', 'sport', 'type', 'service'], inplace=True, axis=1)
+    return df_test.loc[:, ['duration', 'protocol_type', 'service', 'flag', 'src_bytes', 'dst_bytes', 'land',
+                           'count', 'srv_count', 'serror_rate', 'srv_serror_rate', 'same_srv_rate', 'diff_srv_rate',
+                           'dst_host_count', 'dst_host_srv_count', 'dst_host_same_srv_rate', 'dst_host_diff_srv_rate',
+                           'dst_host_same_src_port_rate', 'dst_host_srv_diff_host_rate', 'dst_host_serror_rate',
+                           'dst_host_srv_serror_rate']], post_info
+
+
+def make_data(flow, flow_first_len, flow_second_len):
+    '''
+    把数据流处理成模型需要的数据格式。
+    :param flow: list. 长度为2的列表，分别为紧邻的两秒的数据流。
+    :return: Dataframe
+    '''
+    flow_one = flow[0] + flow[1]
+    df_test = two_second_count(flow_one)
+    df_test, post_info = hundred_count(df_test, flow_first_len, flow_second_len)
+    return df_test, post_info
+
+
+def main(flow, model):
+    '''
+    模型主控程序
+    :param flow: list.
+    :param model:
+    :param df_train:
+    :return: list. [{'content':['dip', 'dport', 'sip', 'sport'], 'error_type':error_type}, ...]
+    '''
+    flow_first_len = len(flow[0])
+    flow_second_len = len(flow[1])
+    probe_ts = flow[1][0]["probe_ts"]
+    df_test, post_info = make_data(flow, flow_first_len, flow_second_len)
+    df_test = setup_data(df_test)
     x_test, y_test = to_xy(df_test, 'outcome')
+    pred = model.predict(x_test)
+    pred_max = np.argmax(pred, axis=1)
+    res = []
+    error_type = {0: 'dos', 2: 'probe'}
+    for i in range(flow_second_len):
+        if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.9:
+            res.append({'content': post_info[i] + [probe_ts], 'error_type': error_type[pred_max[i]]})
+    return res
 
-    # Separate some of dataset for validation
-    x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.2)
 
-    model = train_model(x_train, y_train, x_val, y_val)
-    corr, pred = run_model(model, x_test, y_test)
-
-    # Plot Confusion Matrix as heatmap
-    # TODO: Insert labels on confusion matrix
-    confusion = metrics.confusion_matrix(corr, pred)
-    df_cm = pd.DataFrame(confusion, index=[i for i in range(len(confusion))],
-                         columns=[i for i in range(len(confusion))])
-    plt.figure(figsize=(20, 15))
-    plot = sn.heatmap(df_cm, annot=True)
-    fig = plot.get_figure()
-    fig.savefig("confusion_2.png")
+def test_file(file_name):
+    '''
+    直接从接受的NPM测试文件中读入测试数据
+    :param file_name: str. 测试文件的文件名
+    :return:
+    '''
+    with open(file_name, 'r') as f:
+        model = load_model('ss_model_rej_20.h5')
+        for _ in range(10):
+            flow = [json.loads(f.readline().replace("'", '"').replace('u"', '"')) for line in range(2)]
+            pred = main(flow, model)
+            print(pred)
 
 
 if __name__ == '__main__':
-    main()
+    test_file('npm_test_ts_all.txt')
