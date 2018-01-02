@@ -8,9 +8,10 @@ from .handle import SingletonQueue
 from ..receive_data import receive_blueprint
 from flask import request
 from flask_restful import Api, Resource
+import socket
+import struct
 
 api = Api(receive_blueprint)
-
 
 def find_first_timestamp(data, timestamp, idx=0):
     length = len(data)
@@ -85,11 +86,12 @@ class ReciveData(Resource):
                 sport = error_con['content'][3]
                 error_type = error_con['error_type']
                 kwargs = {
-                    'dip', dip,
-                    'dport', dport,
-                    'sip', sip,
-                    'sport', sport,
-                    'error_type', error_type,
+                    'dip': socket.inet_ntoa(struct.pack('I',socket.htonl(int(dip)))),
+                    'dport': str(int(dport)),
+                    'sip': socket.inet_ntoa(struct.pack('I',socket.htonl(int(sip)))),
+                    'sport': str(int(sport)),
+                    'error_type': error_type[0],
+                    'error_per': str(error_type[1])
                 }
                 Flow.objects.create(**kwargs)
 

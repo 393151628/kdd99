@@ -10,6 +10,7 @@ class Flow(db.Document):
     sip = db.StringField()
     sport = db.StringField()
     error_type = db.StringField()
+    error_per = db.StringField()
     timestamp = db.StringField()
 
     meta = {
