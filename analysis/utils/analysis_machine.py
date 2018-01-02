@@ -1,13 +1,17 @@
+import os
 import json
 import logging
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 
+from sklearn import metrics
 from pandas import DataFrame
 from sklearn import preprocessing
+from sklearn.model_selection import train_test_split
 
 # Hyperparameters
+
 L1_HIDDEN = 375
 L2_HIDDEN = 200
 L3_HIDDEN = 150
@@ -50,15 +54,12 @@ def equalize_columns(df):
     """
         Insert missing columns from df1 on df2
     """
-    model_columns = ['duration', 'src_bytes', 'dst_bytes', 'count', 'srv_count',
-                     'serror_rate', 'srv_serror_rate', 'same_srv_rate', 'diff_srv_rate',
-                     'dst_host_count', 'dst_host_srv_count', 'dst_host_same_srv_rate',
-                     'dst_host_diff_srv_rate', 'dst_host_same_src_port_rate',
-                     'dst_host_srv_diff_host_rate', 'dst_host_serror_rate',
-                     'dst_host_srv_serror_rate', 'outcome', 'protocol_type.icmp',
-                     'protocol_type.tcp', 'protocol_type.udp', 'flag.OTH', 'flag.REJ',
-                     'flag.RSTO', 'flag.RSTOS0', 'flag.RSTR', 'flag.S0', 'flag.S1',
-                     'flag.S2', 'flag.S3', 'flag.SF', 'flag.SH', 'land.0', 'land.1']
+    model_columns = ['duration', 'src_bytes', 'dst_bytes', 'count', 'serror_rate',
+                     'dst_host_count', 'dst_host_same_src_port_rate', 'dst_host_serror_rate',
+                     'outcome', 'protocol_type.icmp', 'protocol_type.tcp',
+                     'protocol_type.udp', 'flag.OTH', 'flag.REJ', 'flag.RSTO', 'flag.RSTOS0',
+                     'flag.RSTR', 'flag.S0', 'flag.S1', 'flag.S2', 'flag.S3', 'flag.SF',
+                     'flag.SH', 'land.0', 'land.1']
     for column in model_columns:
         if column not in df.columns:
             df[column] = pd.Series(0.5,
@@ -90,7 +91,7 @@ def to_xy(df, target):
 def load_model(model_name):
     model = tf.contrib.keras.models.Sequential()
     model.add(tf.contrib.keras.layers.Dense(L1_HIDDEN,
-                                            input_dim=34,
+                                            input_dim=25,
                                             kernel_initializer='normal',
                                             activation='relu'))
     model.add(tf.contrib.keras.layers.Dropout(0.3))
@@ -189,6 +190,7 @@ def two_second_count(flow):
         if line.get('tcp') or line.get('http') or line.get('udp') or line.get('dns'):
             tmp.append(line.get('tcp') or line.get('http') or line.get('udp') or line.get('dns'))
     test = pd.concat([DataFrame(tmp), data], axis=1)
+    # print(test['probe_ts'].min(),flow[0]['probe_ts'])
     test.drop(['add', 'ans', 'auth', 'client_latency', 'conn_type', 'direction', 'dst_group_id', 'flow_id',
                'ifindex', 'in_pkts', 'is_reply', 'l7_proto', 'latency', 'method', 'ooorder_in_pkts', 'ooorder_out_pkts',
                'opcode', 'out_pkts', 'protocol', 'referer', 'req_class', 'req_name',
@@ -243,30 +245,37 @@ def hundred_count(df, first, second):
     '''
 
     tmp_100 = []
-
-    for i in range(first - 99, first + second - 99):
+    if first > 100:
+        begin_ind = first - 100
+    else:
+        begin_ind = 100
+    for i in range(begin_ind, begin_ind + second):
         tmp_df = df[i:i + 100].to_dict(orient='records')
-        same_ip, same_ip_port, same_ip_syn, same_port_syn, same_dip_port_diff_sip, same_dip_diff_port = 0, 0, 0, 0, 0, 0
-        dip = tmp_df[-1]['dip']
-        dport = tmp_df[-1]['dport']
-        sip = tmp_df[-1]['sip']
-        #     print(dip, dport, sip)
-        for j in tmp_df:
-            if j['dip'] == dip:
-                same_ip += 1
-                if j['dport'] == dport:
-                    same_ip_port += 1
-                    if j['flag'] in ['S0', 'S1', 'S2', 'S3']:
-                        same_port_syn += 1
-                    if j['sip'] != sip:
-                        same_dip_port_diff_sip += 1
-                elif j['flag'] in ['S0', 'S1', 'S2', 'S3']:
-                    same_ip_syn += 1
-        tmp_100.append(
-            list(tmp_df[-1].values()) + [same_ip, same_ip_port, same_ip_port / 100, (same_ip - same_ip_port) / 100,
-                                         (same_ip - same_ip_port) / 100,
-                                         same_dip_port_diff_sip / same_ip_port, same_ip_syn / same_ip,
-                                         same_port_syn / same_ip_port])
+        # print(tmp_df)
+        if len(tmp_df):
+            same_ip, same_ip_port, same_ip_syn, same_port_syn, same_dip_port_diff_sip, same_dip_diff_port = 0, 0, 0, 0, 0, 0
+
+            dip = tmp_df[-1]['dip']
+            dport = tmp_df[-1]['dport']
+            sip = tmp_df[-1]['sip']
+            #     print(dip, dport, sip)
+            for j in tmp_df:
+                if j['dip'] == dip:
+                    same_ip += 1
+                    if j['dport'] == dport:
+                        same_ip_port += 1
+                        if j['flag'] in ['S0', 'S1', 'S2', 'S3']:
+                            same_port_syn += 1
+                        if j['sip'] != sip:
+                            same_dip_port_diff_sip += 1
+                    elif j['flag'] in ['S0', 'S1', 'S2', 'S3']:
+                        same_ip_syn += 1
+            tmp_100.append(
+                list(tmp_df[-1].values()) + [same_ip, same_ip_port, same_ip_port / 100, (same_ip - same_ip_port) / 100,
+                                             (same_ip - same_ip_port) / 100,
+                                             same_dip_port_diff_sip / same_ip_port, same_ip_syn / same_ip,
+                                             same_port_syn / same_ip_port])
+
     df_test = DataFrame(tmp_100, columns=['dip', 'dport', 'duration', 'src_bytes', 'dst_bytes', 'sip', 'sport', 'type',
                                           'service', 'protocol_type',
                                           'land', 'flag', 'count', 'srv_count', 'same_srv_rate', 'diff_srv_rate',
@@ -277,7 +286,11 @@ def hundred_count(df, first, second):
                                           'dst_host_serror_rate',
                                           'dst_host_srv_serror_rate']).round(3)
     post_info = df_test[['dip', 'dport', 'sip', 'sport']].values.tolist()
-    df_test.drop(['dip', 'dport', 'sip', 'sport', 'type', 'service'], inplace=True, axis=1)
+    # df_test.drop(['dip', 'dport', 'sip', 'sport', 'type','service'], inplace=True, axis=1)
+    df_test.drop(['dip', 'dport', 'sip', 'sport', 'type', 'service', 'srv_count', 'same_srv_rate',
+                  'diff_srv_rate', 'srv_serror_rate', 'dst_host_srv_count', 'dst_host_same_srv_rate',
+                  'dst_host_diff_srv_rate', 'dst_host_srv_diff_host_rate', 'dst_host_srv_serror_rate'], inplace=True,
+                 axis=1)
     return df_test.loc[:, ['duration', 'protocol_type', 'service', 'flag', 'src_bytes', 'dst_bytes', 'land',
                            'count', 'srv_count', 'serror_rate', 'srv_serror_rate', 'same_srv_rate', 'diff_srv_rate',
                            'dst_host_count', 'dst_host_srv_count', 'dst_host_same_srv_rate', 'dst_host_diff_srv_rate',
@@ -294,6 +307,7 @@ def make_data(flow, flow_first_len, flow_second_len):
     flow_one = flow[0] + flow[1]
     df_test = two_second_count(flow_one)
     df_test, post_info = hundred_count(df_test, flow_first_len, flow_second_len)
+
     return df_test, post_info
 
 
@@ -307,33 +321,42 @@ def main(flow, model):
     '''
     flow_first_len = len(flow[0])
     flow_second_len = len(flow[1])
-    probe_ts = flow[1][0]["probe_ts"]
-    df_test, post_info = make_data(flow, flow_first_len, flow_second_len)
-    df_test = setup_data(df_test)
-    x_test, y_test = to_xy(df_test, 'outcome')
-    pred = model.predict(x_test)
-    pred_max = np.argmax(pred, axis=1)
-    res = []
-    error_type = {0: 'dos', 2: 'probe'}
-    for i in range(flow_second_len):
-        if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.9:
-            res.append({'content': post_info[i] + [probe_ts], 'error_type': error_type[pred_max[i]]})
-    return res
+    if flow_second_len + flow_first_len > 100:
+        probe_ts = flow[1][0]["probe_ts"]
+        df_test, post_info = make_data(flow, flow_first_len, flow_second_len)
+        df_test = setup_data(df_test)
+        x_test, y_test = to_xy(df_test, 'outcome')
+        pred = model.predict(x_test)
+        pred_max = np.argmax(pred, axis=1)
+        res = []
+        error_type = {0: 'dos', 2: 'probe'}
+        for i in range(len(pred_max)):
+            if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.8:
+                res.append({'content': post_info[i] + [probe_ts],
+                            'error_type': [error_type[pred_max[i]], pred[i][pred_max[i]]]})
+        return res
 
 
-def test_file(file_name):
+def test_file(file_name, model):
     '''
     直接从接受的NPM测试文件中读入测试数据
     :param file_name: str. 测试文件的文件名
     :return:
     '''
     with open(file_name, 'r') as f:
-        model = load_model('ss_model_rej_20.h5')
-        for _ in range(10):
+        # model = load_model('model_ip_port.h5')
+
+        for _ in range(50):
             flow = [json.loads(f.readline().replace("'", '"').replace('u"', '"')) for line in range(2)]
             pred = main(flow, model)
-            print(pred)
+            if pred:
+                print(len(pred))
+                print(pred)
 
 
 if __name__ == '__main__':
-    test_file('npm_test_ts_all.txt')
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    model_name = 'model_ip_port.h5'
+    model = load_model(os.path.join(basedir, model_name))
+    path = os.path.join(basedir, 'npm_test_aaaaaa.txt')
+    test_file(path, model)

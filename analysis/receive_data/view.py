@@ -47,12 +47,25 @@ def create_queue(data):
         else:
             queue_obj.clean_all()
             queue_obj.push_last_con(data)
+            queue_obj.set_timestamp_last(timestamp_min)
+            queue_obj.set_timestamp_current(timestamp_min+1)
 
     else:
         timestamp = timestamp_min + 1
         idx = find_first_timestamp(data, timestamp)
-        queue_obj.push_current_con(data[:idx+1])
-        queue_obj.push_next_con(data[idx+1:])
+        data_min = data[:idx]
+        data_max = data[idx:]
+        if diff == 0:
+            queue_obj.push_current_con(data_min)
+            queue_obj.push_next_con(data_max)
+        elif diff == 1:
+            queue_obj.push_next_con(data_min)
+        else:
+            queue_obj.clean_all()
+            queue_obj.push_last_con(data_min)
+            queue_obj.push_current_con(data_max)
+            queue_obj.set_timestamp_last(timestamp_min)
+            queue_obj.set_timestamp_current(timestamp)
 
     queue = queue_obj.get_queue()
     return queue
@@ -63,21 +76,22 @@ class ReciveData(Resource):
         data = request.get_data()
         data = json.loads(data)
         queue = create_queue(data)
-        res = main(queue, model)
-        for error_con in res:
-            dip = error_con['content'][0]
-            dport = error_con['content'][1]
-            sip = error_con['content'][2]
-            sport = error_con['content'][3]
-            error_type = error_con['error_type']
-            kwargs = {
-                'dip', dip,
-                'dport', dport,
-                'sip', sip,
-                'sport', sport,
-                'error_type', error_type,
-            }
-            Flow.objects.create(**kwargs)
+        if queue:
+            res = main(queue, model)
+            for error_con in res:
+                dip = error_con['content'][0]
+                dport = error_con['content'][1]
+                sip = error_con['content'][2]
+                sport = error_con['content'][3]
+                error_type = error_con['error_type']
+                kwargs = {
+                    'dip', dip,
+                    'dport', dport,
+                    'sip', sip,
+                    'sport', sport,
+                    'error_type', error_type,
+                }
+                Flow.objects.create(**kwargs)
 
         return 'success'
 

@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
+import numpy as np
 
 from analysis.utils.analysis_machine import load_model
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-model = load_model(os.path.join(basedir, 'analysis', 'utils', 'ss_model_rej_20.h5'))
+model_name = 'model_ip_port.h5'
+model = load_model(os.path.join(basedir, 'analysis', 'utils', model_name))
+model.predict(np.zeros((1, 25)))
 
 
 class DevelopConfig(object):

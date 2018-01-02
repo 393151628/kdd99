@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 import threading
 
-lock = threading.Lock()
+td_lock = threading.Lock()
 
 
 def lock(func):
     def __wapper__(*args, **kwargs):
-        lock.acquire()
+        td_lock.acquire()
         res = func(*args, **kwargs)
-        lock.release()
+        td_lock.release()
         return res
 
     return __wapper__
@@ -55,5 +55,13 @@ class SingletonQueue(object):
 
     @lock
     def clean_all(self):
-        self.last_con, self.current_con, self.next_con = []
-        self.timestamp_last, self.timestamp_current = 0
+        self.last_con = self.current_con = self.next_con = []
+        self.timestamp_last = self.timestamp_current = 0
+
+    @lock
+    def set_timestamp_current(self, timestamp):
+        self.timestamp_current = timestamp
+
+    @lock
+    def set_timestamp_last(self, timestamp):
+        self.timestamp_last = timestamp
