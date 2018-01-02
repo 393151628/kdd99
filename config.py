@@ -23,6 +23,12 @@ class DevelopConfig(object):
             'password': 'kdd99',
             }
 
+    my_ip_list = [
+        '10',
+        '172',
+        '192',
+    ]
+
 
 configs = {
     'dev': DevelopConfig,

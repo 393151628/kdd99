@@ -30,7 +30,6 @@ class SingletonQueue(object):
             SingletonQueue.__instance = object.__new__(cls, *args, **kwd)
         return SingletonQueue.__instance
 
-
     @lock
     def push_current_con(self, data):
         self.current_con = self.current_con + data
