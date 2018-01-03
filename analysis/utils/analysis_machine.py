@@ -128,7 +128,7 @@ def setup_data(df_test):
     :param df_test: Dataframe.
     :return: Dataframe
     '''
-    logger.info("Testing with {0} rows.".format(len(df_test)))
+    # logger.info("Testing with {0} rows.".format(len(df_test)))
 
     encode_continuous_zscore(df_test, 'duration')
     encode_one_hot(df_test, 'protocol_type')
@@ -327,7 +327,7 @@ def main(flow, model):
         df_test, post_info = make_data(flow, flow_first_len, flow_second_len)
         df_test = setup_data(df_test)
         x_test, y_test = to_xy(df_test, 'outcome')
-        pred = model.predict(x_test)
+        pred = model.predict(x_test)*0.96
         pred_max = np.argmax(pred, axis=1)
         res = []
         error_type = {0: 'dos', 2: 'probe'}
