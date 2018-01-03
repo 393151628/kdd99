@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
+import socket
+import struct
 
 from analysis.model import Flow
 from config import model
@@ -8,10 +10,9 @@ from .handle import SingletonQueue
 from ..receive_data import receive_blueprint
 from flask import request
 from flask_restful import Api, Resource
-import socket
-import struct
 
 api = Api(receive_blueprint)
+
 
 def find_first_timestamp(data, timestamp, idx=0):
     length = len(data)
@@ -38,18 +39,25 @@ def create_queue(data):
     # 不等则找出不等的点进行分割
     # 认为一次请求中的连接时间戳最多相差1秒
     diff = timestamp_min - queue_obj.timestamp_current
+    queue = []
     if timestamp_min == timestamp_max:
         if diff == 0:
             queue_obj.push_current_con(data)
+
+        # 代表上一秒的链接都发完了
         elif diff == 1:
             queue_obj.push_next_con(data)
+            queue = queue_obj.get_queue()
 
         # 重洗队列
-        else:
+        elif diff >= 2:
             queue_obj.clean_all()
             queue_obj.push_last_con(data)
             queue_obj.set_timestamp_last(timestamp_min)
             queue_obj.set_timestamp_current(timestamp_min+1)
+
+        elif diff < 0:
+            queue_obj.push_last_con(data)
 
     else:
         timestamp = timestamp_min + 1
@@ -59,16 +67,24 @@ def create_queue(data):
         if diff == 0:
             queue_obj.push_current_con(data_min)
             queue_obj.push_next_con(data_max)
+
+        # 代表上一秒的链接都发完了
         elif diff == 1:
             queue_obj.push_next_con(data_min)
-        else:
+            queue = queue_obj.get_queue()
+
+        # 重洗队列
+        elif diff >= 2:
             queue_obj.clean_all()
             queue_obj.push_last_con(data_min)
             queue_obj.push_current_con(data_max)
             queue_obj.set_timestamp_last(timestamp_min)
             queue_obj.set_timestamp_current(timestamp)
+        elif diff < 0:
+            queue_obj.push_last_con(data_min)
+            queue_obj.push_current_con(data_max)
 
-    queue = queue_obj.get_queue()
+    # queue = queue_obj.get_queue()
     return queue
 
 
