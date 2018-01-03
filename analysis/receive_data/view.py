@@ -96,7 +96,7 @@ class ReciveData(Resource):
         data = json.loads(data)
         queue = create_queue(data)
         if queue:
-            logging.info('******', len(queue[0]), len(queue[1]), '*********')
+            logging.info('******{0}, {1}, **********'.format(len(queue[0]), len(queue[1])))
             res = main(queue, model)
             for error_con in res:
                 dip = error_con['content'][0]
