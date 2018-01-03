@@ -2,6 +2,7 @@
 import json
 import socket
 import struct
+import logging
 
 from analysis.model import Flow
 from config import model
@@ -95,7 +96,7 @@ class ReciveData(Resource):
         data = json.loads(data)
         queue = create_queue(data)
         if queue:
-            print('******', len(queue[0]), len(queue[1]), '*********')
+            logging.info('******', len(queue[0]), len(queue[1]), '*********')
             res = main(queue, model)
             for error_con in res:
                 dip = error_con['content'][0]
