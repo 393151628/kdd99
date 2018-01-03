@@ -46,11 +46,15 @@ class SingletonQueue(object):
     def get_queue(self):
         if self.current_con:
             queue = [self.last_con, self.current_con]
-            self.last_con, self.current_con = self.current_con, self.next_con
-            self.timestamp_last, self.timestamp_current = self.timestamp_current, self.timestamp_current + 1
+
         else:
             queue = []
         return queue
+
+    @lock
+    def next_timestamp(self):
+        self.last_con, self.current_con = self.current_con, self.next_con
+        self.timestamp_last, self.timestamp_current = self.timestamp_current, self.timestamp_current + 1
 
     @lock
     def clean_all(self):

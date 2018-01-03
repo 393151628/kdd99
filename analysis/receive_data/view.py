@@ -39,50 +39,51 @@ def create_queue(data):
     # 不等则找出不等的点进行分割
     # 认为一次请求中的连接时间戳最多相差1秒
     diff = timestamp_min - queue_obj.timestamp_current
-    queue = []
     if timestamp_min == timestamp_max:
-        if diff == 0:
-            queue_obj.push_current_con(data)
-
-        # 代表上一秒的链接都发完了
-        elif diff == 1:
-            queue_obj.push_next_con(data)
-            queue = queue_obj.get_queue()
-
-        # 重洗队列
-        elif diff >= 2:
-            queue_obj.clean_all()
-            queue_obj.push_last_con(data)
-            queue_obj.set_timestamp_last(timestamp_min)
-            queue_obj.set_timestamp_current(timestamp_min+1)
-
-        elif diff < 0:
-            queue_obj.push_last_con(data)
+        queue = [[], data]
+        # if diff == 0:
+        #     queue_obj.push_current_con(data)
+        #
+        # # 代表上一秒的链接都发完了
+        # elif diff == 1:
+        #     queue_obj.push_next_con(data)
+        #     queue = queue_obj.get_queue()
+        #
+        # # 重洗队列
+        # elif diff >= 2:
+        #     queue_obj.clean_all()
+        #     queue_obj.push_last_con(data)
+        #     queue_obj.set_timestamp_last(timestamp_min)
+        #     queue_obj.set_timestamp_current(timestamp_min+1)
+        #
+        # elif diff < 0:
+        #     queue_obj.push_last_con(data)
 
     else:
         timestamp = timestamp_min + 1
         idx = find_first_timestamp(data, timestamp)
         data_min = data[:idx]
         data_max = data[idx:]
-        if diff == 0:
-            queue_obj.push_current_con(data_min)
-            queue_obj.push_next_con(data_max)
-
-        # 代表上一秒的链接都发完了
-        elif diff == 1:
-            queue_obj.push_next_con(data_min)
-            queue = queue_obj.get_queue()
-
-        # 重洗队列
-        elif diff >= 2:
-            queue_obj.clean_all()
-            queue_obj.push_last_con(data_min)
-            queue_obj.push_current_con(data_max)
-            queue_obj.set_timestamp_last(timestamp_min)
-            queue_obj.set_timestamp_current(timestamp)
-        elif diff < 0:
-            queue_obj.push_last_con(data_min)
-            queue_obj.push_current_con(data_max)
+        queue = [data_min, data_max]
+        # if diff == 0:
+        #     queue_obj.push_current_con(data_min)
+        #     queue_obj.push_next_con(data_max)
+        #
+        # # 代表上一秒的链接都发完了
+        # elif diff == 1:
+        #     queue_obj.push_next_con(data_min)
+        #     queue = queue_obj.get_queue()
+        #
+        # # 重洗队列
+        # elif diff >= 2:
+        #     queue_obj.clean_all()
+        #     queue_obj.push_last_con(data_min)
+        #     queue_obj.push_current_con(data_max)
+        #     queue_obj.set_timestamp_last(timestamp_min)
+        #     queue_obj.set_timestamp_current(timestamp)
+        # elif diff < 0:
+        #     queue_obj.push_last_con(data_min)
+        #     queue_obj.push_current_con(data_max)
 
     # queue = queue_obj.get_queue()
     return queue
@@ -94,6 +95,7 @@ class ReciveData(Resource):
         data = json.loads(data)
         queue = create_queue(data)
         if queue:
+            print('******', len(queue[0]), len(queue[1]), '*********')
             res = main(queue, model)
             for error_con in res:
                 dip = error_con['content'][0]
