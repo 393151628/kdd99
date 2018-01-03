@@ -4,6 +4,8 @@ import socket
 import struct
 import logging
 
+import datetime
+
 from analysis.model import Flow
 from config import model
 from analysis.utils.analysis_machine import main
@@ -97,7 +99,11 @@ class ReciveData(Resource):
         queue = create_queue(data)
         if queue:
             logging.info('******{0}, {1}, **********'.format(len(queue[0]), len(queue[1])))
+            start = datetime.datetime.now()
             res = main(queue, model)
+            end = datetime.datetime.now()
+            a = (end - start).seconds
+            logging.info('运行时间:{0}'.format(a))
             for error_con in res:
                 dip = error_con['content'][0]
                 dport = error_con['content'][1]
