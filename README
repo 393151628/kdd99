@@ -1,0 +1,9 @@
+一、 项目简介
+    该工程根据NPM流量监控数据中的ip/port四元组及tcp、udp的连接状态等特征，训练神经网络，对可能存在的异常流量进行预警。
+二、 安装及配置
+    1. 创建python3.6虚拟环境
+        使用virtualenv或anaconda创建python36虚拟环境；
+    2. 更新项目依赖库
+        使用工程中的site-packages替换上一步创建的虚拟环境中 Lib 目录下的site-packages；
+    3. 启动服务
+        启动python36虚拟环境，并进入到工程目录下，通过命令 python run.py 启动服务。
