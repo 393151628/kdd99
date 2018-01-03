@@ -334,7 +334,7 @@ def main(flow, model):
             if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.8:
                 res.append({'content': post_info[i] + [probe_ts],
                             'error_type': [error_type[pred_max[i]], pred[i][pred_max[i]]]})
-        return res
+        return set(res)
     return []
 
 
