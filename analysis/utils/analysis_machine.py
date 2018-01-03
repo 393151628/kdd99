@@ -285,6 +285,7 @@ def hundred_count(df, first, second):
                                           'dst_host_same_src_port_rate', 'dst_host_srv_diff_host_rate',
                                           'dst_host_serror_rate',
                                           'dst_host_srv_serror_rate']).round(3)
+    df_test = df_test.drop_duplicates(['dip', 'sip'])
     post_info = df_test[['dip', 'dport', 'sip', 'sport']].values.tolist()
     # df_test.drop(['dip', 'dport', 'sip', 'sport', 'type','service'], inplace=True, axis=1)
     df_test.drop(['dip', 'dport', 'sip', 'sport', 'type', 'service', 'srv_count', 'same_srv_rate',
@@ -334,7 +335,7 @@ def main(flow, model):
             if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.8:
                 res.append({'content': post_info[i] + [probe_ts],
                             'error_type': [error_type[pred_max[i]], pred[i][pred_max[i]]]})
-        return set(res)
+        return res
     return []
 
 
