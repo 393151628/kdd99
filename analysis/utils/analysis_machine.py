@@ -335,6 +335,7 @@ def main(flow, model):
                 res.append({'content': post_info[i] + [probe_ts],
                             'error_type': [error_type[pred_max[i]], pred[i][pred_max[i]]]})
         return res
+    return []
 
 
 def test_file(file_name, model):
