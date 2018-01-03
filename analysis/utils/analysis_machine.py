@@ -331,6 +331,9 @@ def main(flow, model):
         pred_max = np.argmax(pred, axis=1)
         res = []
         error_type = {0: 'dos', 2: 'probe'}
+        if df_test[df_test['sip'] == '10.252.15.41'].to_dict(orient='records'):
+            print('攻击测试：')
+            print(df_test[df_test['sip'] == '10.252.15.41'].to_dict(orient='records'))
         for i in range(len(pred_max)):
             if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.8:
                 res.append({'content': post_info[i] + [probe_ts],
