@@ -6,7 +6,7 @@ import datetime
 from flask import Flask
 from celery import Celery
 
-from analysis.model import Flow
+from analysis.models import Flow
 from config import model
 from analysis.receive_data.view import create_queue
 from analysis.utils.analysis_machine import main

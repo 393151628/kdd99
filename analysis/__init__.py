@@ -12,7 +12,7 @@ def create_app(env):
     app.config.from_object(configs[env])
     db.init_app(app)
 
-    # app.register_blueprint(receive_blueprint, url_prefix='/api/receive')
+    app.register_blueprint(receive_blueprint, url_prefix='/api/receive')
     app.register_blueprint(show_blueprint, url_prefix='/api/show')
     return app
 
