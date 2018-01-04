@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import Flask
 
-from analysis.model import db
+from analysis.models import db
 from config import configs
 from analysis.receive_data import receive_blueprint
 from .show import show_blueprint

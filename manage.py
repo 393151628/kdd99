@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from analysis import create_app
-from analysis import model
-from analysis.model import db
+from analysis import models
+from analysis.models import db
 from flask_script import Manager, Shell
 
 from config import ENV
@@ -12,7 +12,7 @@ manager = Manager(app)
 
 
 def _make_context():
-    return dict(app=app, db=db, models=model)
+    return dict(app=app, db=db, models=models)
 
 
 manager.add_command("shell", Shell(make_context=_make_context, use_ipython=True))
