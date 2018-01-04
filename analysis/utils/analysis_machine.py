@@ -322,25 +322,25 @@ def main(flow, model):
     '''
     flow_first_len = len(flow[0])
     flow_second_len = len(flow[1])
-    if flow_second_len + flow_first_len > 100:
-        probe_ts = flow[1][0]["probe_ts"]
-        df_test, post_info = make_data(flow, flow_first_len, flow_second_len)
-        df_test = setup_data(df_test)
-        x_test, y_test = to_xy(df_test, 'outcome')
-        pred = model.predict(x_test)*0.96
-        pred_max = np.argmax(pred, axis=1)
-        res = []
-        error_type = {0: 'dos', 2: 'probe'}
+    # if flow_second_len + flow_first_len > 100:
+    probe_ts = flow[1][0]["probe_ts"]
+    df_test, post_info = make_data(flow, flow_first_len, flow_second_len)
+    df_test = setup_data(df_test)
+    x_test, y_test = to_xy(df_test, 'outcome')
+    pred = model.predict(x_test)*0.96
+    pred_max = np.argmax(pred, axis=1)
+    res = []
+    error_type = {0: 'dos', 2: 'probe'}
 
-        for i in range(len(pred_max)):
-            if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.8:
-                res.append({'content': post_info[i] + [probe_ts],
-                            'error_type': [error_type[pred_max[i]], pred[i][pred_max[i]]]})
-            if post_info[i][0] == '10.252.15.41':
-                print('nmap测试：',post_info[i])
-                print('预测概率分布：',pred[i])
-        return res
-    return []
+    for i in range(len(pred_max)):
+        if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.8:
+            res.append({'content': post_info[i] + [probe_ts],
+                        'error_type': [error_type[pred_max[i]], pred[i][pred_max[i]]]})
+        if post_info[i][0] == '10.252.15.41':
+            print('nmap测试：',post_info[i])
+            print('预测概率分布：',pred[i])
+    return res
+    # return []
 
 
 def test_file(file_name, model):
