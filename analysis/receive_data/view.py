@@ -1,15 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
-import socket
-import struct
-import logging
 
-import datetime
-
-from analysis.model import Flow
-from analysis.processing.handle import my_celery
-from config import model
-from analysis.utils.analysis_machine import main
+from flask_celery import my_celery
 from analysis.receive_data import receive_blueprint
 from flask import request
 from flask_restful import Api, Resource
@@ -24,12 +16,12 @@ def find_first_timestamp(data, timestamp, idx=0):
     elif length == 0:
         return idx + 1
     else:
-        i = int(length/2)
+        i = int(length / 2)
         if data[i]['probe_ts'] == timestamp:
             return find_first_timestamp(data[:i], timestamp, idx)
         else:
             idx = idx + i + 1
-            return find_first_timestamp(data[i+1:], timestamp, idx=idx)
+            return find_first_timestamp(data[i + 1:], timestamp, idx=idx)
 
 
 def create_queue(data):
@@ -96,33 +88,7 @@ class ReciveData(Resource):
     def post(self):
         data = request.get_data()
         data = json.loads(data)
-        my_celery.delay(data)
-        queue = create_queue(data)
-        if queue:
-            logging.info('******{0}, {1}, **********'.format(len(queue[0]), len(queue[1])))
-            start = datetime.datetime.now()
-            res = main(queue, model)
-            end = datetime.datetime.now()
-            a = (end - start).seconds
-            logging.info('运行时间:{0}'.format(a))
-            for error_con in res:
-                dip = error_con['content'][0]
-                dport = error_con['content'][1]
-                sip = error_con['content'][2]
-                sport = error_con['content'][3]
-                timestamp = error_con['content'][4]
-                error_type = error_con['error_type']
-                kwargs = {
-                    'dip': socket.inet_ntoa(struct.pack('I', socket.htonl(int(dip)))),
-                    'dport': str(int(dport)),
-                    'sip': socket.inet_ntoa(struct.pack('I', socket.htonl(int(sip)))),
-                    'sport': str(int(sport)),
-                    'error_type': error_type[0],
-                    'error_per': str(error_type[1]),
-                    'timestamp': str(int(timestamp)),
-                }
-                Flow.objects.create(**kwargs)
-
+        task = my_celery.apply_async(args=[data])
         return 'success'
 
 

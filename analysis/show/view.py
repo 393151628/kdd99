@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
+import logging
 import os
 
-from analysis.processing.handle import my_celery
 from analysis.utils.ip_geo import get_geo_name_by_ip
 from config import basedir
 from ..show import show_blueprint
@@ -12,8 +12,6 @@ api = Api(show_blueprint)
 
 class TestGeo(Resource):
     def get(self):
-        import time
-        time.sleep(20)
         result = {}
         with open(os.path.join(basedir, 'analysis/show/geo.txt'), 'rb') as f:
             content_list = f.readlines()
@@ -31,8 +29,8 @@ class TestGeo(Resource):
 
 class MyTest(Resource):
     def get(self):
-        task = my_celery.delay('asdasdasd')
-        return 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        logging.info('******************')
+        return 'ddddddddddd'
 
 
 api.add_resource(TestGeo, '/testgeo')
