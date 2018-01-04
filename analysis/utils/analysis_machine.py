@@ -336,7 +336,8 @@ def main(flow, model):
         if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.8:
             res.append({'content': post_info[i] + [probe_ts],
                         'error_type': [error_type[pred_max[i]], pred[i][pred_max[i]]]})
-        if post_info[i][0] == '10.252.15.41':
+        print(type(post_info[i][0]))
+        if post_info[i][0] == 184291113.0:
             print('nmap测试：',post_info[i])
             print('预测概率分布：',pred[i])
     return res
