@@ -7,10 +7,10 @@ import logging
 import datetime
 
 from analysis.model import Flow
+from analysis.processing.handle import my_celery
 from config import model
 from analysis.utils.analysis_machine import main
-from .handle import SingletonQueue
-from ..receive_data import receive_blueprint
+from analysis.receive_data import receive_blueprint
 from flask import request
 from flask_restful import Api, Resource
 
@@ -96,6 +96,7 @@ class ReciveData(Resource):
     def post(self):
         data = request.get_data()
         data = json.loads(data)
+        my_celery.delay(data)
         queue = create_queue(data)
         if queue:
             logging.info('******{0}, {1}, **********'.format(len(queue[0]), len(queue[1])))
