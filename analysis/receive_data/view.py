@@ -12,8 +12,10 @@ api = Api(receive_blueprint)
 class ReciveData(Resource):
     def post(self):
         data = request.get_data()
-        data = json.loads(data)
-        task = my_celery.apply_async(args=[data])
+        # data = json.loads(data)
+        with open('/tmp/data', 'rb') as f:
+            f.write(data)
+        # task = my_celery.apply_async(args=[data])
         return 'success'
 
 

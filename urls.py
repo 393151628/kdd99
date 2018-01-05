@@ -1,4 +1,5 @@
-from analysis import show_blueprint, receive_blueprint
+from analysis.receive_data import receive_blueprint
+from analysis.show import show_blueprint
 
 
 def register_url(app):
