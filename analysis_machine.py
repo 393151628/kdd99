@@ -191,14 +191,14 @@ def two_second_count(flow):
             tmp.append(line.get('tcp') or line.get('http') or line.get('udp') or line.get('dns'))
     test = pd.concat([DataFrame(tmp), data], axis=1)
     # print(test['probe_ts'].min(),flow[0]['probe_ts'])
-    test.drop(['add', 'ans', 'auth', 'client_latency', 'conn_type', 'direction', 'dst_group_id', 'flow_id',
-               'ifindex', 'in_pkts', 'is_reply', 'l7_proto', 'latency', 'method', 'ooorder_in_pkts', 'ooorder_out_pkts',
-               'opcode', 'out_pkts', 'protocol', 'referer', 'req_class', 'req_name',
-               'req_type', 'retran_in_pkts', 'retran_out_pkts', 'server_latency', 'src_group_id', 'status_code',
-               'trans_id', 'true_client_ip', 'unknown_conn', 'url', 'url_query',
-               'user_agent', 'xff', 'zero_win', 'aggregate_count', 'direction', 'dns',
-               'guid', 'http', 'probe', 'probe_ts', 'sample_count', 'tags', 'tcp',
-               'tcp_conn', 'udp', 'service_appid', 'open_ts'], inplace=True, axis=1)
+    # test.drop(['add', 'ans', 'auth', 'client_latency', 'conn_type', 'direction', 'dst_group_id', 'flow_id',
+    #            'ifindex', 'in_pkts', 'is_reply', 'l7_proto', 'latency', 'method', 'ooorder_in_pkts', 'ooorder_out_pkts',
+    #            'opcode', 'out_pkts', 'protocol', 'referer', 'req_class', 'req_name',
+    #            'req_type', 'retran_in_pkts', 'retran_out_pkts', 'server_latency', 'src_group_id', 'status_code',
+    #            'trans_id', 'true_client_ip', 'unknown_conn', 'url', 'url_query',
+    #            'user_agent', 'xff', 'zero_win', 'aggregate_count', 'direction', 'dns',
+    #            'guid', 'http', 'probe', 'probe_ts', 'sample_count', 'tags', 'tcp',
+    #            'tcp_conn', 'udp', 'service_appid', 'open_ts'], inplace=True, axis=1)
 
     test.rename(columns={'in_bytes': 'src_bytes'}, inplace=True)
     test.rename(columns={'out_bytes': 'dst_bytes'}, inplace=True)
