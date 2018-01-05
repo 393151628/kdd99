@@ -2,7 +2,7 @@
 import os
 import numpy as np
 
-from analysis.utils.analysis_machine import load_model
+from analysis_machine import load_model
 
 ENV = 'dev'
 basedir = os.path.abspath(os.path.dirname(__file__))
