@@ -6,9 +6,9 @@ from analysis_machine import load_model
 
 ENV = 'dev'
 basedir = os.path.abspath(os.path.dirname(__file__))
-model_name = 'model_ip_port.h5'
-model = load_model(os.path.join(basedir, 'analysis', 'utils', model_name))
-model.predict(np.zeros((1, 25)))
+# model_name = 'model_ip_port.h5'
+# model = load_model(os.path.join(basedir, 'analysis', 'utils', model_name))
+# model.predict(np.zeros((1, 25)))
 
 
 class DevelopConfig(object):

@@ -3,27 +3,44 @@ import logging
 import socket
 import struct
 import datetime
+
+import os
+
+import numpy as np
 from flask import Flask
 from celery import Celery
 
+from analysis import create_app
 from analysis.models import Flow
-from config import model
-from analysis_machine import main
+from analysis_machine import main, load_model
 from celery import platforms
+from config import ENV
 
 platforms.C_FORCE_ROOT = True
 
-app = Flask(__name__)
+app = create_app(ENV, name=__name__)
 app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
 app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
 
 
 def make_celery(_app):
     _celery = Celery(_app.name,
-                    broker=_app.config['CELERY_BROKER_URL'],
-                    backend=_app.config['CELERY_RESULT_BACKEND']
-                    )
-    _celery.conf.update(_app.config)
+                     broker=_app.config['CELERY_BROKER_URL'],
+                     backend=_app.config['CELERY_RESULT_BACKEND']
+                     )
+
+    # TaskBase = _celery.Task
+    #
+    # class ContextTask(TaskBase):
+    #     abstract = True
+    #
+    #     def __call__(self, *args, **kwargs):
+    #         with app.app_context():
+    #             return TaskBase.__call__(self, *args, **kwargs)
+    #
+    # _celery.Task = ContextTask
+    _celery.config_from_object(app.config)
+
     return _celery
 
 
@@ -105,13 +122,36 @@ def create_queue(data):
     return queue
 
 
+class SingletonModel(object):
+    __instance = None
+    model = ''
+
+    def __init__(self):
+        pass
+
+    def __new__(cls, *args, **kwd):
+        if SingletonModel.__instance is None:
+            SingletonModel.__instance = object.__new__(cls, *args, **kwd)
+            basedir = os.path.abspath(os.path.dirname(__file__))
+            model_name = 'model_ip_port.h5'
+            cls.model = load_model(os.path.join(basedir, 'analysis', 'utils', model_name))
+            cls.model.predict(np.zeros((1, 25)))
+        return SingletonModel.__instance
+
 @celery.task
 def my_celery(data):
+    start = datetime.datetime.now()
+    m = SingletonModel()
+    end = datetime.datetime.now()
+    a = (end - start).seconds
+    logging.info('加载时间:{0}'.format(a))
+    model = m.model
     queue = create_queue(data)
     if queue:
         logging.info('******{0}, {1}, **********'.format(len(queue[0]), len(queue[1])))
         start = datetime.datetime.now()
         res = main(queue, model)
+        # model.predict(np.zeros((1, 25)))
         end = datetime.datetime.now()
         a = (end - start).seconds
         logging.info('运行时间:{0}'.format(a))
