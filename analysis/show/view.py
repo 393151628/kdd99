@@ -52,16 +52,16 @@ class AbnormalEvent(Resource):
         event_count = event_count.rename(columns={'timestamp': 'time', 'dip': 'value'})
         event_count = pd.concat([event_count, his_count]).astype(int)
 
-        count = list(event_count['value'].cumsum()+his_num)
+        count = list(event_count['value'].cumsum()+his_num)[-60:]
 
         event_count['time'] = event_count['time'].apply(lambda x: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x)))
         att = [{"name": row['time'], "value": [row['time'], row['value']]} for row in
                event_count.to_dict(orient='records')[:60]]
 
+        event_len = len(event_all)
         def _event_level(num):
             return int(num / event_len * 100)
 
-        event_len = len(event_all)
         level_dict = event_df.groupby('dip')['timestamp'].count().astype(int).to_dict()
         if len(event_count):
             eventList = [{"Tip": row[1],
