@@ -140,7 +140,11 @@ class SingletonModel(object):
 
 @celery.task
 def my_celery(data):
+    start = datetime.datetime.now()
     m = SingletonModel()
+    end = datetime.datetime.now()
+    a = (end - start).seconds
+    logging.info('加载时间:{0}'.format(a))
     model = m.model
     queue = create_queue(data)
     if queue:
