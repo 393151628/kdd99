@@ -2,8 +2,9 @@
 from analysis import create_app
 from config import ENV
 from urls import register_url
+from flask_celery import app
 
-app = create_app(ENV)
+# app = create_app(ENV)
 register_url(app)
 
 
