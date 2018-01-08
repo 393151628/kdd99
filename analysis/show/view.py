@@ -71,7 +71,7 @@ class AbnormalEvent(Resource):
                           "Sip": row[3],
                           "Sport": row[4],
                           "type": 0,
-                          "EventName": row[0],
+                          "EventName": str(row[0]),
                           "EventType": row[5],
                           "EventDes": '{}({}) -> {}({}):{}'.format(row[1], row[2], row[3], row[4], row[5]),
                           "EventLevel": _event_level(level_dict[row[1]]),
