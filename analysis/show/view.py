@@ -66,7 +66,7 @@ class AbnormalEvent(Resource):
         if len(event_count):
             eventList = [{"Tip": row[1],
                           "Tport": row[2],
-                          "Tname": "中国",
+                          "Tname": get_geo_name_by_ip(row[1]),
                           "Sname": get_geo_name_by_ip(row[3]),
                           "Sip": row[3],
                           "Sport": row[4],
@@ -76,7 +76,21 @@ class AbnormalEvent(Resource):
                           "EventDes": '{}({}) -> {}({}):{}'.format(row[1], row[2], row[3], row[4], row[5]),
                           "EventLevel": _event_level(level_dict[row[1]]),
                           "EventProbability": row[6],
-                          "EventDate": time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(row[7])))} for row in event_all[:100]]
+                          "EventDate": time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(row[7])))} for row in event_all[:10]]
+            if len(event_count)>10:
+                eventList = eventList + [{"Tip": row[1],
+                          "Tport": row[2],
+                          "Sip": row[3],
+                          "Sport": row[4],
+                          "type": 0,
+                          "EventName": str(row[0]),
+                          "EventType": row[5],
+                          "EventDes": '{}({}) -> {}({}):{}'.format(row[1], row[2], row[3], row[4], row[5]),
+                          "EventLevel": _event_level(level_dict[row[1]]),
+                          "EventProbability": row[6],
+                          "EventDate": time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(row[7])))} for row in event_all[10:100]
+
+                ]
         else: eventList = []
 
         res = {'count' : count,

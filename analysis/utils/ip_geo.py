@@ -192,7 +192,9 @@ geo_map = {
     '马达加斯加': 'Madagascar',
     '马里': 'Mali',
     '马里亚那群岛': 'Mariana Is',
-    '黎巴嫩': 'Lebanon'
+    '黎巴嫩': 'Lebanon',
+    '本地局域网':'LAN',
+    '保留地址': 'Reserved Address'
 }
 
 
@@ -207,7 +209,7 @@ def get_geo_name_by_ip(ip_addr):
     # Get IP Address Location
     result = re.findall(r'(<li>.*?</li>)', s)[0]
     country = result[9:-5].strip()
-    return geo_map.get(country, '未知地区')
+    return geo_map.get(country, 'unknow')
 
 
 if __name__ == '__main__':
