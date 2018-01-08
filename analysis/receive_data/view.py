@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import logging
 import datetime
 import logging
 import socket
@@ -21,7 +22,8 @@ class ReciveData(Resource):
     def post(self):
         data = request.get_data()
         data = json.loads(data)
-        task = my_celery.apply_async(args=[data])
+        logging.info('receive data numbers1111111111111: {0}'.format(len(data)))
+        # task = my_celery.apply_async(args=[data])
         return 'success'
 
 # class ReciveDataFile(Resource):
@@ -51,6 +53,7 @@ class ReciveData(Resource):
 #                     'timestamp': str(int(timestamp)),
 #                 }
 #                 Flow.objects.create(**kwargs)
+
 
 api.add_resource(ReciveData, '/')
 # api.add_resource(ReciveDataFile, '/ReciveDataFile')
