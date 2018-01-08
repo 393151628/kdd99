@@ -8,7 +8,7 @@ from config import basedir
 from ..show import show_blueprint
 from flask_restful import Api, Resource
 import pandas as pd
-from flask import jsonify
+import json
 
 from analysis.models import Flow
 
@@ -42,7 +42,7 @@ class AbnormalEvent(Resource):
         logging.info(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) + ' : get abnormal event.')
         time_strip = int(time.mktime(time.localtime()))
         his_num = Flow.objects.filter(timestamp__gt=str(time_strip-time_strip%86400),timestamp__lte=str(time_strip-6000)).count()
-        event_obj = Flow.objects.filter(timestamp__gt=str(time_strip-6000),timestamp__lte=str(time_strip)).all()
+        event_obj = Flow.objects.filter(timestamp__gt=str(time_strip-12000),timestamp__lte=str(time_strip)).all()
         event_all = [[event.id, event.dip, event.dport, event.sip, event.sport, event.error_type, event.error_per, event.timestamp] for event in event_obj]
         event_df = pd.DataFrame(event_all, columns=['id', 'dip', 'dport', 'sip', 'sport', 'error_type', 'error_per', 'timestamp'])
 
@@ -66,8 +66,8 @@ class AbnormalEvent(Resource):
         if len(event_count):
             eventList = [{"Tip": row[1],
                           "Tport": row[2],
-                          "Tname": 'Ukraine',
-                          "Sname": 'China',
+                          "Tname": "中国",
+                          "Sname": get_geo_name_by_ip(row[3]),
                           "Sip": row[3],
                           "Sport": row[4],
                           "type": 0,
@@ -84,7 +84,7 @@ class AbnormalEvent(Resource):
                'eventList' : eventList
                }
 
-        return jsonify(res)
+        return res
 
 
 api.add_resource(TestGeo, '/testgeo')
