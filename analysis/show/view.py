@@ -56,7 +56,7 @@ class AbnormalEvent(Resource):
 
         event_count['time'] = event_count['time'].apply(lambda x: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x)))
         att = [{"name": row['time'], "value": [row['time'], row['value']]} for row in
-               event_count.to_dict(orient='records')[:60]]
+               event_count.to_dict(orient='records')[-60:]]
 
         event_len = len(event_all)
         def _event_level(num):
