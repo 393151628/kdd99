@@ -78,7 +78,7 @@ class AbnormalEvent(Resource):
                           "EventDes": '{}({}) -> {}({}):{}'.format(row[1], row[2], row[3], row[4], row[5]),
                           "EventLevel": _event_level(level_dict[row[1]]),
                           "EventProbability": row[6],
-                          "EventDate": time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(row[7])))} for row in event_all[-10:0]]
+                          "EventDate": time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(row[7])))} for row in event_all[-10:]]
             if len(event_count)>10:
                 eventList = eventList + [{"Tip": row[1],
                           "Tport": row[2],
