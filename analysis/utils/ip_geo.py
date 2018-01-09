@@ -247,6 +247,12 @@ def get_geo_name_by_ip(ip_addr):
 
     return geo_names[randint(0,200)]
 
+def lan_ip(dip):
+    if dip.partition('.')[0] in ['10', '172']:
+        return 0
+    else:
+        return 1
+
 
 if __name__ == '__main__':
     ipaddr = '80.209.231.191'

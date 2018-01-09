@@ -49,19 +49,37 @@ class AbnormalEvent(Resource):
         event_all = [[event.id, event.dip, event.dport, event.sip, event.sport, event.error_type, event.error_per, event.timestamp] for event in event_obj]
         event_df = pd.DataFrame(event_all, columns=['id', 'dip', 'dport', 'sip', 'sport', 'error_type', 'error_per', 'timestamp'])
 
-        his_count = pd.DataFrame([[int(time_strip) + i, 0] for i in range(60)], columns=['time', 'value'])
         event_count = event_df.groupby('timestamp')['dip'].count()
-        event_count = event_count.reset_index()
-        event_count = event_count.rename(columns={'timestamp': 'time', 'dip': 'value'})
+        # event_count = event_count.reset_index()
+        # event_count = event_count.rename(columns={'timestamp': 'time', 'dip': 'value'})
+        #零填充
+        # his_count = pd.DataFrame([[int(time_strip) + i, 0] for i in range(60)], columns=['time', 'value'])
         # event_count = pd.concat([event_count, his_count]).astype(int)
-        #event_count测试
-        event_count = event_count.astype(int)
+        # count = list(event_count['value'].cumsum()+his_num)[-60:]
+        #
+        # event_count['time'] = event_count['time'].apply(lambda x: time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(x)))
+        # att = [{"name": row['time'], "value": [row['time'], row['value']]} for row in
+        #        event_count.to_dict(orient='records')[-60:]]
 
-        count = list(event_count['value'].cumsum()+his_num)[-60:]
+        #零填充测试
+        count = []
+        att = []
+        event_count = event_count.to_dict()
+        time_strip = int(event_all[-1][-1])
+        for i in range(-59,1):
+            time_str = str(time_strip+i)
+            if event_count.get(time_str):
+                his_num = his_num+event_count[time_str]
+                count.append(his_num)
+                strip_time = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(int(time_str)))
+                att.append({"name": time_str, "value": [strip_time , event_count[time_str]]})
+            else:
+                count.append(his_num)
+                strip_time = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(int(time_str)))
+                att.append({"name": strip_time, "value": [strip_time, 0]})
 
-        event_count['time'] = event_count['time'].apply(lambda x: time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(x)))
-        att = [{"name": row['time'], "value": [row['time'], row['value']]} for row in
-               event_count.to_dict(orient='records')[-60:]]
+
+
 
         event_len = len(event_all)
         def _event_level(num):
