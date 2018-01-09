@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import urllib.request as urllib2
 import re
+from random import randint
 
 geo_map = {
     '东萨摩亚(美)': 'Samoa Eastern',
@@ -197,19 +198,54 @@ geo_map = {
     '保留地址': 'Reserved Address'
 }
 
+geo_names = [
+    "China","Somalia","Liechtenstein","Morocco","W. Sahara","Serbia","Afghanistan","Angola",
+    "Albania","Aland","Andorra","United Arab Emirates","Argentina","Armenia","American Samoa",
+    "Fr. S. Antarctic Lands","Antigua and Barb.","Australia","Austria","Azerbaijan","Burundi",
+    "Belgium","Benin","Burkina Faso","Bangladesh","Bulgaria","Bahrain","Bahamas",
+    "Bosnia and Herz.","Belarus","Belize","Bermuda","Bolivia","Brazil","Barbados","Brunei",
+    "Bhutan","Botswana","Central African Rep.","Canada","Switzerland","Chile","Côte d'Ivoire",
+    "Cameroon","Dem. Rep. Congo","Congo","Colombia","Comoros","Cape Verde","Costa Rica",
+    "Cuba","Curaçao","Cayman Is.","N. Cyprus","Cyprus","Czech Rep.","Germany","Djibouti",
+    "Dominica","Denmark","Dominican Rep.","Algeria","Ecuador","Egypt","Eritrea","Spain",
+    "Estonia","Ethiopia","Finland","Fiji","Falkland Is.","France","Faeroe Is.",
+    "Micronesia","Gabon","United Kingdom","Georgia","Ghana","Guinea","Gambia",
+    "Guinea-Bissau","Eq. Guinea","Greece","Grenada","Greenland","Guatemala","Guam",
+    "Guyana","Heard I. and McDonald Is.","Honduras","Croatia","Haiti","Hungary",
+    "Indonesia","Isle of Man","India","Br. Indian Ocean Ter.","Ireland","Iran","Iraq",
+    "Iceland","Israel","Italy","Jamaica","Jersey","Jordan","Japan","Siachen Glacier",
+    "Kazakhstan","Kenya","Kyrgyzstan","Cambodia","Kiribati","Korea","Kuwait","Lao PDR",
+    "Lebanon","Liberia","Libya","Saint Lucia","Sri Lanka","Lesotho","Lithuania",
+    "Luxembourg","Latvia","Moldova","Madagascar","Mexico","Macedonia","Mali","Malta",
+    "Myanmar","Montenegro","Mongolia","N. Mariana Is.","Mozambique","Mauritania",
+    "Montserrat","Mauritius","Malawi","Malaysia","Namibia","New Caledonia","Niger",
+    "Nigeria","Nicaragua","Niue","Netherlands","Norway","Nepal","New Zealand","Oman",
+    "Pakistan","Panama","Peru","Philippines","Palau","Papua New Guinea","Poland",
+    "Puerto Rico","Dem. Rep. Korea","Portugal","Paraguay","Palestine","Fr. Polynesia",
+    "Qatar","Romania","Russia","Rwanda","Saudi Arabia","Sudan","S. Sudan","Senegal",
+    "Singapore","S. Geo. and S. Sandw. Is.","Saint Helena","Solomon Is.","Sierra Leone",
+    "El Salvador","St. Pierre and Miquelon","São Tomé and Principe","Suriname","Slovakia",
+    "Slovenia","Sweden","Swaziland","Seychelles","Syria","Turks and Caicos Is.","Chad",
+    "Togo","Thailand","Tajikistan","Turkmenistan","Timor-Leste","Tonga",
+    "Trinidad and Tobago","Tunisia","Turkey","Tanzania","Uganda","Ukraine","Uruguay",
+    "United States","Uzbekistan","St. Vin. and Gren.","Venezuela","U.S. Virgin Is.",
+    "Vietnam","Vanuatu","Samoa","Yemen","South Africa","Zambia","Zimbabwe"]
+
 
 def get_geo_name_by_ip(ip_addr):
     # ipaddr = '80.209.231.191'
-    url = "http://www.ip138.com/ips138.asp?ip=%s&action=2" % ip_addr
-    print(url)
-    u = urllib2.urlopen(url)
-    s = u.read()
-    # Get IP Address
-    s = str(s, encoding='gbk')
-    # Get IP Address Location
-    result = re.findall(r'(<li>.*?</li>)', s)[0]
-    country = result[9:-5].strip()
-    return geo_map.get(country, 'unknow')
+    # url = "http://www.ip138.com/ips138.asp?ip=%s&action=2" % ip_addr
+    # print(url)
+    # u = urllib2.urlopen(url)
+    # s = u.read()
+    # # Get IP Address
+    # s = str(s, encoding='gbk')
+    # # Get IP Address Location
+    # result = re.findall(r'(<li>.*?</li>)', s)[0]
+    # country = result[9:-5].strip()
+    # return geo_map.get(country, 'unknow')
+
+    return geo_names[randint(0,200)]
 
 
 if __name__ == '__main__':
