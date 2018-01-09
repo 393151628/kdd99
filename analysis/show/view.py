@@ -50,7 +50,9 @@ class AbnormalEvent(Resource):
         event_count = event_df.groupby('timestamp')['dip'].count()
         event_count = event_count.reset_index()
         event_count = event_count.rename(columns={'timestamp': 'time', 'dip': 'value'})
-        event_count = pd.concat([event_count, his_count]).astype(int)
+        # event_count = pd.concat([event_count, his_count]).astype(int)
+        #event_count测试
+        event_count = event_count.astype(int)
 
         count = list(event_count['value'].cumsum()+his_num)[-60:]
 
@@ -76,7 +78,7 @@ class AbnormalEvent(Resource):
                           "EventDes": '{}({}) -> {}({}):{}'.format(row[1], row[2], row[3], row[4], row[5]),
                           "EventLevel": _event_level(level_dict[row[1]]),
                           "EventProbability": row[6],
-                          "EventDate": time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(row[7])))} for row in event_all[:10]]
+                          "EventDate": time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(row[7])))} for row in event_all[-10:0]]
             if len(event_count)>10:
                 eventList = eventList + [{"Tip": row[1],
                           "Tport": row[2],
@@ -88,7 +90,7 @@ class AbnormalEvent(Resource):
                           "EventDes": '{}({}) -> {}({}):{}'.format(row[1], row[2], row[3], row[4], row[5]),
                           "EventLevel": _event_level(level_dict[row[1]]),
                           "EventProbability": row[6],
-                          "EventDate": time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(row[7])))} for row in event_all[10:100]
+                          "EventDate": time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(row[7])))} for row in event_all[-100:-10]
 
                 ]
         else: eventList = []
