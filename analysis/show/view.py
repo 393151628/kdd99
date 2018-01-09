@@ -42,7 +42,7 @@ class AbnormalEvent(Resource):
         logging.info(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) + ' : get abnormal event.')
         time_strip = int(time.mktime(time.localtime()))
         his_num = Flow.objects.filter(timestamp__gt=str(time_strip-time_strip%86400),timestamp__lte=str(time_strip-6000)).count()
-        event_obj = Flow.objects.filter(timestamp__gt=str(time_strip-12000),timestamp__lte=str(time_strip)).all()
+        event_obj = Flow.objects.filter(timestamp__gt=str(time_strip-360000),timestamp__lte=str(time_strip)).all()
         event_all = [[event.id, event.dip, event.dport, event.sip, event.sport, event.error_type, event.error_per, event.timestamp] for event in event_obj]
         event_df = pd.DataFrame(event_all, columns=['id', 'dip', 'dport', 'sip', 'sport', 'error_type', 'error_per', 'timestamp'])
 
