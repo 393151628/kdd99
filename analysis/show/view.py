@@ -2,6 +2,7 @@
 import logging
 import os
 import time
+from random import randint
 
 from analysis.utils.ip_geo import get_geo_name_by_ip
 from config import basedir
@@ -61,24 +62,33 @@ class AbnormalEvent(Resource):
         # att = [{"name": row['time'], "value": [row['time'], row['value']]} for row in
         #        event_count.to_dict(orient='records')[-60:]]
 
+        # count = []
+        # att = []
+        # event_count = event_count.to_dict()
+        # time_strip = int(event_all[-1][-1])
+        # for i in range(-59, 1):
+        #     time_str = str(time_strip + i)
+        #     if event_count.get(time_str):
+        #         his_num = his_num + event_count[time_str]
+        #         count.append(his_num)
+        #         strip_time = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(int(time_str)))
+        #         att.append({"name": strip_time, "value": [strip_time, event_count[time_str]]})
+        #     else:
+        #         count.append(his_num)
+        #         strip_time = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(int(time_str)))
+        #         att.append({"name": strip_time, "value": [strip_time, 0]})
+
         #零填充测试
         count = []
         att = []
-        event_count = event_count.to_dict()
-        time_strip = int(event_all[-1][-1])
+        # event_count = event_count.to_dict()
+        # time_strip = int(event_all[-1][-1])
         for i in range(-59,1):
-            time_str = str(time_strip+i)
-            if event_count.get(time_str):
-                his_num = his_num+event_count[time_str]
-                count.append(his_num)
-                strip_time = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(int(time_str)))
-                att.append({"name": strip_time, "value": [strip_time , event_count[time_str]]})
-            else:
-                count.append(his_num)
-                strip_time = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(int(time_str)))
-                att.append({"name": strip_time, "value": [strip_time, 0]})
-
-
+            val = randint(1,5)
+            his_num = his_num+ val
+            count.append(his_num)
+            strip_time = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(time_strip+i))
+            att.append({"name": strip_time, "value": [strip_time , val]})
 
 
         event_len = len(event_all)
@@ -86,39 +96,47 @@ class AbnormalEvent(Resource):
             return int(num / event_len * 100)
 
         level_dict = event_df.groupby('dip')['timestamp'].count().astype(int).to_dict()
+        eventList = []
+        level_scr = 0
         if len(event_count):
-            eventList = [{"Tip": row[1],
-                          "Tport": row[2],
-                          "Tname": get_geo_name_by_ip(row[1]),
-                          "Sname": get_geo_name_by_ip(row[3]),
-                          "Sip": row[3],
-                          "Sport": row[4],
-                          "type": 0,
-                          "EventName": str(row[0]),
-                          "EventType": row[5],
-                          "EventDes": '{}({}) -> {}({}):{}'.format(row[1], row[2], row[3], row[4], row[5]),
-                          "EventLevel": _event_level(level_dict[row[1]]),
-                          "EventProbability": row[6],
-                          "EventDate": time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(int(row[7])))} for row in event_all[-10:]]
+            for row in event_all[-10:]:
+                scr_level = _event_level(level_dict[row[1]])
+                level_scr += scr_level
+                eventList.append({"Tip": row[1],
+                              "Tport": row[2],
+                              "Tname": get_geo_name_by_ip(row[1]),
+                              "Sname": get_geo_name_by_ip(row[3]),
+                              "Sip": row[3],
+                              "Sport": row[4],
+                              "type": 0,
+                              "EventName": str(row[0]),
+                              "EventType": row[5],
+                              "EventDes": '{}({}) -> {}({}):{}'.format(row[1], row[2], row[3], row[4], row[5]),
+                              "EventLevel": scr_level,
+                              "EventProbability": row[6],
+                              "EventDate": time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(int(row[7])))} )
             if len(event_count)>10:
-                eventList = eventList + [{"Tip": row[1],
-                          "Tport": row[2],
-                          "Sip": row[3],
-                          "Sport": row[4],
-                          "type": 0,
-                          "EventName": str(row[0]),
-                          "EventType": row[5],
-                          "EventDes": '{}({}) -> {}({}):{}'.format(row[1], row[2], row[3], row[4], row[5]),
-                          "EventLevel": _event_level(level_dict[row[1]]),
-                          "EventProbability": row[6],
-                          "EventDate": time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(int(row[7])))} for row in event_all[-100:-10]
+                for row in event_all[-100:-10]:
+                    scr_level = _event_level(level_dict[row[1]])
+                    level_scr += scr_level
+                    eventList.append({"Tip": row[1],
+                              "Tport": row[2],
+                              "Sip": row[3],
+                              "Sport": row[4],
+                              "type": 0,
+                              "EventName": str(row[0]),
+                              "EventType": row[5],
+                              "EventDes": '{}({}) -> {}({}):{}'.format(row[1], row[2], row[3], row[4], row[5]),
+                              "EventLevel": scr_level,
+                              "EventProbability": row[6],
+                              "EventDate": time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(int(row[7])))} )
 
-                ]
         else: eventList = []
 
         res = {'count' : count,
                'att' : att,
-               'eventList' : eventList
+               'eventList' : eventList,
+               'level' : level_scr/len(event_all[-100:])
                }
 
         return res
