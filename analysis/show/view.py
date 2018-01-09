@@ -39,7 +39,7 @@ class MyTest(Resource):
 
 class AbnormalEvent(Resource):
     def get(self):
-        logging.info(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) + ' : get abnormal event.')
+        logging.info(time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(time.time())) + ' : get abnormal event.')
         time_strip = int(time.mktime(time.localtime()))
         his_num = Flow.objects.filter(timestamp__gt=str(time_strip-time_strip%86400),timestamp__lte=str(time_strip-6000)).count()
         event_obj = Flow.objects.filter(timestamp__gt=str(time_strip-360000),timestamp__lte=str(time_strip)).all()
@@ -56,7 +56,7 @@ class AbnormalEvent(Resource):
 
         count = list(event_count['value'].cumsum()+his_num)[-60:]
 
-        event_count['time'] = event_count['time'].apply(lambda x: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x)))
+        event_count['time'] = event_count['time'].apply(lambda x: time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(x)))
         att = [{"name": row['time'], "value": [row['time'], row['value']]} for row in
                event_count.to_dict(orient='records')[-60:]]
 
@@ -78,7 +78,7 @@ class AbnormalEvent(Resource):
                           "EventDes": '{}({}) -> {}({}):{}'.format(row[1], row[2], row[3], row[4], row[5]),
                           "EventLevel": _event_level(level_dict[row[1]]),
                           "EventProbability": row[6],
-                          "EventDate": time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(row[7])))} for row in event_all[-10:]]
+                          "EventDate": time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(int(row[7])))} for row in event_all[-10:]]
             if len(event_count)>10:
                 eventList = eventList + [{"Tip": row[1],
                           "Tport": row[2],
@@ -90,7 +90,7 @@ class AbnormalEvent(Resource):
                           "EventDes": '{}({}) -> {}({}):{}'.format(row[1], row[2], row[3], row[4], row[5]),
                           "EventLevel": _event_level(level_dict[row[1]]),
                           "EventProbability": row[6],
-                          "EventDate": time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(row[7])))} for row in event_all[-100:-10]
+                          "EventDate": time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(int(row[7])))} for row in event_all[-100:-10]
 
                 ]
         else: eventList = []
