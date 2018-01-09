@@ -4,7 +4,7 @@ import os
 import time
 from random import randint
 
-from analysis.utils.ip_geo import get_geo_name_by_ip
+from analysis.utils.ip_geo import get_geo_name_by_ip, lan_ip
 from config import basedir
 from ..show import show_blueprint
 from flask_restful import Api, Resource
@@ -108,7 +108,7 @@ class AbnormalEvent(Resource):
                               "Sname": get_geo_name_by_ip(row[3]),
                               "Sip": row[3],
                               "Sport": row[4],
-                              "type": 0,
+                              "type": lan_ip(row[1]),
                               "EventName": str(row[0]),
                               "EventType": row[5],
                               "EventDes": '{}({}) -> {}({}):{}'.format(row[1], row[2], row[3], row[4], row[5]),
@@ -123,7 +123,7 @@ class AbnormalEvent(Resource):
                               "Tport": row[2],
                               "Sip": row[3],
                               "Sport": row[4],
-                              "type": 0,
+                              "type": lan_ip(row[1]),
                               "EventName": str(row[0]),
                               "EventType": row[5],
                               "EventDes": '{}({}) -> {}({}):{}'.format(row[1], row[2], row[3], row[4], row[5]),
