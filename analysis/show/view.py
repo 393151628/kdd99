@@ -72,7 +72,7 @@ class AbnormalEvent(Resource):
                 his_num = his_num+event_count[time_str]
                 count.append(his_num)
                 strip_time = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(int(time_str)))
-                att.append({"name": time_str, "value": [strip_time , event_count[time_str]]})
+                att.append({"name": strip_time, "value": [strip_time , event_count[time_str]]})
             else:
                 count.append(his_num)
                 strip_time = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(int(time_str)))
