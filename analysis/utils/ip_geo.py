@@ -194,7 +194,7 @@ geo_map = {
     '马里': 'Mali',
     '马里亚那群岛': 'Mariana Is',
     '黎巴嫩': 'Lebanon',
-    '本地局域网':'LAN',
+    '本地局域网':'China',
     '保留地址': 'Reserved Address'
 }
 
@@ -234,18 +234,18 @@ geo_names = [
 
 def get_geo_name_by_ip(ip_addr):
     # ipaddr = '80.209.231.191'
-    # url = "http://www.ip138.com/ips138.asp?ip=%s&action=2" % ip_addr
-    # print(url)
-    # u = urllib2.urlopen(url)
-    # s = u.read()
-    # # Get IP Address
-    # s = str(s, encoding='gbk')
-    # # Get IP Address Location
-    # result = re.findall(r'(<li>.*?</li>)', s)[0]
-    # country = result[9:-5].strip()
-    # return geo_map.get(country, 'unknow')
+    url = "http://www.ip138.com/ips138.asp?ip=%s&action=2" % ip_addr
+    print(url)
+    u = urllib2.urlopen(url)
+    s = u.read()
+    # Get IP Address
+    s = str(s, encoding='gbk')
+    # Get IP Address Location
+    result = re.findall(r'(<li>.*?</li>)', s)[0]
+    country = result[9:-5].strip()
+    return geo_map.get(country, 'unknow')
 
-    return geo_names[randint(0,200)]
+    # return geo_names[randint(0,200)]
 
 def lan_ip(dip):
     if dip.partition('.')[0] in ['10', '172']:
