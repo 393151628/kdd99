@@ -83,6 +83,20 @@ def to_xy(df, target):
         return df.values.astype(np.float32), df.as_matrix(
             [target]).astype(np.float32)
 
+def check_res(res):
+    res_count = {}
+    final_res = []
+    for item in res:
+        dip = item["content"][0]
+        if res_count.get(dip):
+            res_count[dip].append(item)
+        else:
+            res_count[dip] = [item]
+    for i in res_count:
+        if len(res_count[i])>1:
+            final_res.extend(res_count[i])
+    return final_res
+
 def load_model(model_name):
     model = tf.contrib.keras.models.Sequential()
     model.add(tf.contrib.keras.layers.Dense(L1_HIDDEN,
@@ -291,8 +305,10 @@ def main(flow,model):
             if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.8:
                 res.append({'content': post_info[i] + [probe_ts],
                             'error_type': [error_type[pred_max[i]], pred[i][pred_max[i]]]})
-        print(res)
-        return res
+        # print(res)
+        if len(res)>8:
+            # print(res)
+            return res
     return []
 
 def test_file(file_name):
@@ -303,17 +319,14 @@ def test_file(file_name):
     '''
     with open(file_name, 'r') as f:
         model = load_model('model_test_1.1.h5')
-        for i in range(1):
+        for i in range(3):
             print('###### {} ######'.format(i))
             flow = [json.loads(f.readline().replace("'", '"').replace('u"', '"')) for line in range(2)]
             pred = main(flow, model)
             if pred:
-                print(len(pred))
+                pred = check_res(pred)
                 print(pred)
 
 
 if __name__=='__main__':
     test_file('npm_test_ts_all.txt')
-
-# import cProfile
-# cProfile.run("test_file('npm_test_ts_all.txt')")
