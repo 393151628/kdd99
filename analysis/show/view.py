@@ -42,11 +42,9 @@ class AbnormalEvent(Resource):
     def get(self):
         logging.info(time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(time.time())) + ' : get abnormal event.')
         time_strip = int(time.mktime(time.localtime()))
-        # his_num = Flow.objects.filter(timestamp__gt=str(time_strip-time_strip%86400),timestamp__lte=str(time_strip-60)).count()
-        his_num = Flow.objects.filter(timestamp__gt=str(time_strip - time_strip % 26400),
-                                      timestamp__lte=str(time_strip - 60)).count()
+        his_num = Flow.objects.filter(timestamp__gt=str(time_strip-time_strip%86400),timestamp__lte=str(time_strip-60)).count()
         logging.info('his_num: {}'.format(his_num))
-        event_obj = Flow.objects.filter(timestamp__gt=str(time_strip-26400),timestamp__lte=str(time_strip)).limit(100)
+        event_obj = Flow.objects.filter(timestamp__gt=str(time_strip-556400),timestamp__lte=str(time_strip)).limit(100)
         event_all = [[event.id, event.dip, event.dport, event.sip, event.sport, event.error_type, event.error_per, event.timestamp] for event in event_obj]
         event_df = pd.DataFrame(event_all, columns=['id', 'dip', 'dport', 'sip', 'sport', 'error_type', 'error_per', 'timestamp'])
 
@@ -136,7 +134,7 @@ class AbnormalEvent(Resource):
         res = {'count' : count,
                'att' : att,
                'eventList' : eventList,
-               'level' : int(level_scr/len(event_all[-100:]))
+               'level' : int(level_scr/(len(event_all[-100:])+5))
                }
 
         return res
