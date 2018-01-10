@@ -22,8 +22,8 @@ class ReciveData(Resource):
     def post(self):
         data = request.get_data()
         data = json.loads(data)
-        logging.info('receive data numbers1111111111111: {0}'.format(len(data)))
-        # task = my_celery.apply_async(args=[data])
+        logging.info('receive data numbers: {0}'.format(len(data)))
+        task = my_celery.apply_async(args=[data])
         return 'success'
 
 # class ReciveDataFile(Resource):
