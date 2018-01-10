@@ -246,8 +246,6 @@ def hundred_count(df, first, second):
 
             dip = tmp_df[-1]['dip']
             dport = tmp_df[-1]['dport']
-            sip = tmp_df[-1]['sip']
-            #     print(dip, dport, sip)
             for j in tmp_df:
                 if j['dip'] == dip:
                     same_ip += 1
@@ -261,7 +259,7 @@ def hundred_count(df, first, second):
     df_test = DataFrame(tmp_100, columns=['dip', 'dport', 'duration', 'src_bytes', 'dst_bytes', 'sip', 'sport',
                                         'protocol_type','land', 'flag', 'count', 'serror_rate','dst_host_count',
                                         'dst_host_same_src_port_rate', 'dst_host_serror_rate']).round(3)
-    # df_test = df_test.drop_duplicates(['dip', 'sip'])
+    df_test = df_test.drop_duplicates(['dip',  'dport', 'sip'])
     post_info = df_test[['dip', 'dport', 'sip', 'sport']].values.tolist()
 
     return df_test.loc[:, ['duration', 'protocol_type', 'flag', 'src_bytes', 'dst_bytes',
@@ -308,7 +306,7 @@ def main(flow,model):
         # print(res)
         if len(res)>8:
             # print(res)
-            return res
+            return check_res(res)
     return []
 
 def test_file(file_name):
@@ -325,7 +323,7 @@ def test_file(file_name):
             pred = main(flow, model)
             if pred:
                 pred = check_res(pred)
-                print(pred)
+                # print(pred)
 
 
 if __name__=='__main__':
