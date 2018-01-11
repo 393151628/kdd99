@@ -3,6 +3,8 @@ import logging
 import os
 import time
 from random import randint
+from datetime import datetime
+from pytz import timezone
 
 from analysis.utils.ip_geo import get_geo_name_by_ip, lan_ip
 from config import basedir
@@ -54,12 +56,12 @@ class AbnormalEvent(Resource):
         beg_time = int(time_strip)
         # beg_time = int(event_count.index[-1])
         cur_count = event_count.reindex(index=[str(beg_time + i) for i in range(-59,1)], fill_value=0)
-
+        cst_tz = timezone('Asia/Shanghai')
         for i in range(-59,1):
             val = int(cur_count[i])
             his_num = his_num+ val
             count.append(his_num)
-            strip_time = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(time_strip+i))
+            strip_time = datetime.fromtimestamp(beg_time+i).astimezone(cst_tz).strftime('%Y-%m-%d %H:%M:%S')
             att.append({"name": strip_time, "value": [strip_time , val]})
 
 
