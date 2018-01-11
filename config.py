@@ -17,7 +17,7 @@ class DevelopConfig(object):
 
     MONGODB_SETTINGS = {
             'db': 'kdd99',
-            'host': '172.28.20.124',
+            'host': '10.252.99.41',
             'port': 27017,
             'username': 'kdd99',
             'password': 'kdd99',
@@ -28,10 +28,6 @@ class DevelopConfig(object):
         '172',
         '192',
     ]
-
-    # celery
-    CELERY_BROKER_URL = 'redis://localhost:6379/0'
-    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
 
 configs = {

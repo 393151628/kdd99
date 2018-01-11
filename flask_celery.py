@@ -19,8 +19,8 @@ from config import ENV
 platforms.C_FORCE_ROOT = True
 
 app = create_app(ENV, name=__name__)
-app.config['CELERY_BROKER_URL'] = 'redis://172.28.50.82:6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://172.28.50.82:6379/0'
+app.config['CELERY_BROKER_URL'] = 'redis://10.252.99.41:6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://10.252.99.41:6379/0'
 
 
 def make_celery(_app):
