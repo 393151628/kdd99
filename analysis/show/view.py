@@ -96,7 +96,7 @@ class AbnormalEvent(Resource):
                               "EventDes": '{}({}) -> {}({}):{}'.format(row[1], row[2], row[3], row[4], row[5]),
                               "EventLevel": int(scr_level),
                               "EventProbability": row[6],
-                              "EventDate": time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(int(row[7])))} )
+                              "EventDate": datetime.fromtimestamp(int(row[7])).astimezone(cst_tz).strftime('%Y-%m-%d %H:%M:%S')})
             if len(event_count)>10:
                 for row in event_all[-100:-10]:
                     scr_level = _event_level(level_dict[row[1]])
@@ -111,7 +111,7 @@ class AbnormalEvent(Resource):
                               "EventDes": '{}({}) -> {}({}):{}'.format(row[1], row[2], row[3], row[4], row[5]),
                               "EventLevel": int(scr_level),
                               "EventProbability": row[6],
-                              "EventDate": time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(int(row[7])))} )
+                              "EventDate": datetime.fromtimestamp(int(row[7])).astimezone(cst_tz).strftime('%Y-%m-%d %H:%M:%S') })
 
         res = {'count' : count,
                'att' : att,
