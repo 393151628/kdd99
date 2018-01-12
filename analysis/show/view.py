@@ -93,7 +93,7 @@ class AbnormalEvent(Resource):
                               "type": lan_ip(row[1]),
                               "EventName": str(row[0]),
                               "EventType": row[5],
-                              "EventDes": '{}({}) -> {}({}):{}'.format(row[3], row[4],row[1], row[2]),
+                              "EventDes": '{}({}) -> {}({})'.format(row[3], row[4],row[1], row[2]),
                               "EventLevel": int(scr_level),
                               "EventProbability": row[6],
                               "EventDate": datetime.fromtimestamp(int(row[7])).astimezone(cst_tz).strftime('%Y-%m-%d %H:%M:%S')})
