@@ -339,8 +339,7 @@ def main(flow,model):
         error_type = {0: 'ddos', 2: 'probe'}
         seed = random.uniform(0.8, 0.95)
         for i in range(len(pred_max)):
-            print(type(post_info[i][0]), post_info[i][0])
-            if post_info[i][0] == 184312605:
+            if post_info[i][0] == 184312605.0:
                 logging.info("10.252.99.29: {}".format(pred_max[i]))
             if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.5:
                 res.append({'content': post_info[i] + [probe_ts],
