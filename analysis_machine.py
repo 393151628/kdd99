@@ -121,13 +121,13 @@ def check_res(res):
                                           'error_type': ['ddos', 0.99]})
             else:
                 print(len(dport_count[dip][sip]) , len(sport_count[dip][sip]))
-                if len(dport_count[dip][sip]) > 2:
+                if len(dport_count[dip][sip]) > 3:
                     for dport in dport_count[dip][sip]:
                         for k in dport_count[dip][sip][dport]:
                             final_res.append(k)
                 else:
                     for dport in dport_count[dip][sip]:
-                        if len(dport_count[dip][sip][dport]) > 2:
+                        if len(dport_count[dip][sip][dport]) > 3:
                             for k in dport_count[dip][sip][dport]:
                                 final_res.append(k)
 
@@ -297,7 +297,7 @@ def hundred_count(df, first, second):
     df_test = DataFrame(tmp_100, columns=['dip', 'dport', 'duration', 'src_bytes', 'dst_bytes', 'sip', 'sport',
                                         'protocol_type','land', 'flag', 'count', 'serror_rate','dst_host_count',
                                         'dst_host_same_src_port_rate', 'dst_host_serror_rate']).round(3)
-    # df_test = df_test.drop_duplicates(['dip',  'dport', 'sip'])
+    df_test = df_test.drop_duplicates(['dip',  'dport', 'sip', 'sport'])
     post_info = df_test[['dip', 'dport', 'sip', 'sport']].values.tolist()
 
     return df_test.loc[:, ['duration', 'protocol_type', 'flag', 'src_bytes', 'dst_bytes',
