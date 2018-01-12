@@ -46,7 +46,7 @@ class AbnormalEvent(Resource):
         count, att, eventList = [], [], []
         his_num = Flow.objects.filter(timestamp__gt=str(time_strip-time_strip%86400),timestamp__lte=str(time_strip-60)).count()
         # logging.info('his_num: {}'.format(his_num))
-        event_obj = Flow.objects.filter(timestamp__gt=str(time_strip-60000),timestamp__lte=str(time_strip)).limit(100)
+        event_obj = Flow.objects.filter(timestamp__gt=str(time_strip-60),timestamp__lte=str(time_strip)).limit(100)
         event_all = [[event.id, event.dip, event.dport, event.sip, event.sport, event.error_type, event.error_per, event.timestamp] for event in event_obj]
         event_df = pd.DataFrame(event_all, columns=['id', 'dip', 'dport', 'sip', 'sport', 'error_type', 'error_per', 'timestamp'])
 
@@ -80,7 +80,7 @@ class AbnormalEvent(Resource):
 
         level_dict = event_df.groupby('dip')['timestamp'].count().astype(int).to_dict()
         level_scr = 0
-        if len(event_count):
+        if event_len:
             for row in event_all[-10:]:
                 scr_level = _event_level(level_dict[row[1]])
                 level_scr += scr_level
@@ -97,7 +97,7 @@ class AbnormalEvent(Resource):
                               "EventLevel": int(scr_level),
                               "EventProbability": row[6],
                               "EventDate": datetime.fromtimestamp(int(row[7])).astimezone(cst_tz).strftime('%Y-%m-%d %H:%M:%S')})
-            if len(event_count)>10:
+            if event_len>10:
                 for row in event_all[-100:-10]:
                     scr_level = _event_level(level_dict[row[1]])
                     level_scr += scr_level
