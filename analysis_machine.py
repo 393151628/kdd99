@@ -340,7 +340,7 @@ def main(flow,model):
         seed = random.uniform(0.8, 0.95)
         for i in range(len(pred_max)):
             if post_info[i][0] == 184312605:
-                print("10.252.99.29: ", pred_max[i])
+                logging.info("10.252.99.29: {}".format(pred_max[i]))
             if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.5:
                 res.append({'content': post_info[i] + [probe_ts],
                             'error_type': [error_type[pred_max[i]], round(float(pred[i][pred_max[i]]*seed), 3)]})
