@@ -114,7 +114,7 @@ def check_res(res):
                     for k in dport_count[dip][sip][dport]:
                         final_res.append({'content': k['content'],
                                 'error_type': ['scan', 0.99]})
-            elif len(dport_count[dip][sip]) < len(sport_count[dip][sip]) and len(sport_count[dip][sip]) > 3:
+            elif len(dport_count[dip][sip]) < len(sport_count[dip][sip]) and len(sport_count[dip][sip]) > 1:
                 for sport in sport_count[dip][sip]:
                     for k in sport_count[dip][sip][sport]:
                         final_res.append({'content': k['content'],
@@ -339,6 +339,8 @@ def main(flow,model):
         error_type = {0: 'ddos', 2: 'probe'}
         seed = random.uniform(0.8, 0.95)
         for i in range(len(pred_max)):
+            if post_info[i][0] == 184312605:
+                print("10.252.99.29: ", pred_max[i])
             if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.5:
                 res.append({'content': post_info[i] + [probe_ts],
                             'error_type': [error_type[pred_max[i]], round(float(pred[i][pred_max[i]]*seed), 3)]})
