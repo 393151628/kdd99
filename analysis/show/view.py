@@ -46,7 +46,7 @@ class AbnormalEvent(Resource):
         count, att, eventList = [], [], []
         his_num = Flow.objects.filter(timestamp__gt=str(time_strip-time_strip%86400),timestamp__lte=str(time_strip-60)).count()
         # logging.info('his_num: {}'.format(his_num))
-        event_obj = Flow.objects.filter(timestamp__gt=str(time_strip-60),timestamp__lte=str(time_strip)).limit(100)
+        event_obj = Flow.objects.filter(timestamp__gt=str(time_strip-60000),timestamp__lte=str(time_strip)).limit(100)
         event_all = [[event.id, event.dip, event.dport, event.sip, event.sport, event.error_type, event.error_per, event.timestamp] for event in event_obj]
         event_df = pd.DataFrame(event_all, columns=['id', 'dip', 'dport', 'sip', 'sport', 'error_type', 'error_per', 'timestamp'])
 
