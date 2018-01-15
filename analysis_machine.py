@@ -114,7 +114,7 @@ def check_res(res):
                     for k in dport_count[dip][sip][dport]:
                         final_res.append({'content': k['content'],
                                 'error_type': ['scan', 0.99]})
-            elif len(dport_count[dip][sip]) < len(sport_count[dip][sip]) and len(sport_count[dip][sip]) > 1:
+            elif len(dport_count[dip][sip]) < len(sport_count[dip][sip]) and len(sport_count[dip][sip]) > 3:
                 for sport in sport_count[dip][sip]:
                     for k in sport_count[dip][sip][sport]:
                         final_res.append({'content': k['content'],
@@ -336,7 +336,7 @@ def main(flow,model):
         pred = model.predict(x_test)
         pred_max = np.argmax(pred, axis=1)
         res = []
-        error_type = {0: 'ddos', 2: 'probe'}
+        error_type = {0: 'ddos', 2: 'scan'}
         seed = random.uniform(0.8, 0.95)
         for i in range(len(pred_max)):
             if post_info[i][0] == 184312605.0:
