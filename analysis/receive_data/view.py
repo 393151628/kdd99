@@ -18,12 +18,33 @@ from analysis_machine import main
 api = Api(receive_blueprint)
 
 
+class SingletonQueue(object):
+    __instance = None
+    queque = []
+
+    def __init__(self):
+        pass
+
+    def __new__(cls, *args, **kwd):
+        if SingletonQueue.__instance is None:
+            SingletonQueue.__instance = object.__new__(cls, *args, **kwd)
+        return SingletonQueue.__instance
+
+
 class ReciveData(Resource):
     def post(self):
         data = request.get_data()
         data = json.loads(data)
         logging.info('receive data numbers: {0}'.format(len(data)))
-        task = my_celery.apply_async(args=[data])
+        queue_obj = SingletonQueue()
+        queue = queue_obj.queque
+        queue.append(data)
+        if len(queue) == 2:
+            task = my_celery.apply_async(args=[queue])
+            logging.info('send celery numbers: {0}****************{1}'.format(len(queue[0]), len(queue[1])))
+            queue = []
+
+        # task = my_celery.apply_async(args=[data])
         return 'success'
 
 # class ReciveDataFile(Resource):

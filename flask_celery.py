@@ -146,8 +146,8 @@ def my_celery(data):
     a = (end - start).seconds
     logging.info('加载时间:{0}'.format(a))
     model = m.model
-    logging.info('receive data numbers1111111111111: {0}'.format(len(data)))
-    queue = create_queue(data)
+    # logging.info('receive data numbers1111111111111: {0}'.format(len(data)))
+    queue = data
     if queue:
         logging.info('******{0}, {1}, **********'.format(len(queue[0]), len(queue[1])))
         start = datetime.datetime.now()
