@@ -19,7 +19,7 @@ pidfile = '../log/gunicorn.pid'
 # set process daemon, not use in default
 # daemon = True
 # number of processes
-workers = 4
+workers = 1
 # number of threads of per process
 threads = 4
 worker_class = 'gevent'

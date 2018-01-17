@@ -30,6 +30,15 @@ class SingletonQueue(object):
             SingletonQueue.__instance = object.__new__(cls, *args, **kwd)
         return SingletonQueue.__instance
 
+    def set_queue(self, d):
+        self.queque.append(d)
+
+    def get_queue(self):
+        return self.queque
+
+    def clear_queue(self):
+        self.queque = []
+
 
 class ReciveData(Resource):
     def post(self):
@@ -37,12 +46,12 @@ class ReciveData(Resource):
         data = json.loads(data)
         logging.info('receive data numbers: {0}'.format(len(data)))
         queue_obj = SingletonQueue()
-        queue = queue_obj.queque
-        queue.append(data)
+        queue_obj.set_queue(data)
+        queue = queue_obj.get_queue()
         if len(queue) == 2:
             task = my_celery.apply_async(args=[queue])
             logging.info('send celery numbers: {0}****************{1}'.format(len(queue[0]), len(queue[1])))
-            queue = []
+            queue_obj.clear_queue()
 
         # task = my_celery.apply_async(args=[data])
         return 'success'
