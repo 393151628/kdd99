@@ -385,10 +385,11 @@ def main(flow,model):
         seed = random.uniform(0.9, 0.96)
         for i in range(len(pred_max)):
             #攻击流量测试
-            # if post_info[i][2] == 184291113:
-            #     print('nmap', post_info[i], probe_ts, 'error_type', [error_type[pred_max[i]], round(float(pred[i][pred_max[i]]), 3)])
-            # if post_info[i][2] == 16843009:
-            #     print('ddos',post_info[i], probe_ts, 'error_type', [error_type[pred_max[i]], pred[i]])
+            if post_info[i][2] == 184291113:
+                logging.info("probe-{}-error_type-{}-".format(post_info[i], [error_type[pred_max[i]], round(float(pred[i][pred_max[i]]), 3)]))
+            if post_info[i][2] == 16843009:
+                logging.info("ddos-{}-error_type-{}-".format(post_info[i], [error_type[pred_max[i]],
+                                                                            round(float(pred[i][pred_max[i]]), 3)]))
             if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.5:
                 res.append({'content': post_info[i] + [probe_ts],
                             'error_type': [error_type[pred_max[i]], round(float(pred[i][pred_max[i]]*seed), 3)]})
