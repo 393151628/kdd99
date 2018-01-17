@@ -1,3 +1,6 @@
+#增加srv_serror_rate
+
+
 import os
 import json
 import logging
@@ -8,13 +11,15 @@ import tensorflow as tf
 from pandas import DataFrame
 from sklearn import preprocessing
 
-
 # Hyperparameters
 L1_HIDDEN = 375
 L2_HIDDEN = 200
 L3_HIDDEN = 150
 L4_HIDDEN = 75
 L5_HIDDEN = 50
+CONN_LEN = 0
+DDOS_LEN = 0
+SCAN_LEN = 0
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -48,8 +53,6 @@ def equalize_columns(df):
     """
         Insert missing columns from df1 on df2
     """
-
-    #删除字段多余属性
     model_columns = ['duration', 'src_bytes', 'dst_bytes', 'count', 'srv_count',
        'serror_rate', 'srv_serror_rate', 'same_srv_rate', 'diff_srv_rate',
        'dst_host_count', 'dst_host_same_src_port_rate',
@@ -141,7 +144,7 @@ def check_res(res):
 def load_model(model_name):
     model = tf.contrib.keras.models.Sequential()
     model.add(tf.contrib.keras.layers.Dense(L1_HIDDEN,
-                                            input_dim=29,
+                                            input_dim=26,
                                             kernel_initializer='normal',
                                             activation='relu'))
     model.add(tf.contrib.keras.layers.Dropout(0.3))
@@ -178,7 +181,9 @@ def setup_data(df_test):
     :param df_test: Dataframe.
     :return: Dataframe
     '''
+    global CONN_LEN
     logger.info("Testing with {0} rows.".format(len(df_test)))
+    CONN_LEN += len(df_test)
     df_test = df_test[df_test['flag'].isin(['S0', 'S1', 'S2', 'S3', 'OTH', 'OTH', 'RSTR', 'SF'])]
     encode_continuous_zscore(df_test, 'duration')
     encode_one_hot(df_test, 'protocol_type')
@@ -193,15 +198,17 @@ def setup_data(df_test):
     encode_continuous_zscore(df_test, 'same_srv_rate')
     encode_continuous_zscore(df_test, 'diff_srv_rate')
     encode_continuous_zscore(df_test, 'dst_host_count')
-    encode_continuous_zscore(df_test, 'dst_host_srv_count')
-    encode_continuous_zscore(df_test, 'dst_host_same_srv_rate')
-    encode_continuous_zscore(df_test, 'dst_host_diff_srv_rate')
+    # encode_continuous_zscore(df_test, 'dst_host_srv_count')
+    # encode_continuous_zscore(df_test, 'dst_host_same_srv_rate')
+    # encode_continuous_zscore(df_test, 'dst_host_diff_srv_rate')
     encode_continuous_zscore(df_test, 'dst_host_same_src_port_rate')
     encode_continuous_zscore(df_test, 'dst_host_srv_diff_host_rate')
     encode_continuous_zscore(df_test, 'dst_host_serror_rate')
     encode_continuous_zscore(df_test, 'dst_host_srv_serror_rate')
 
     df_test.dropna(inplace=True, axis=1)
+    # print(df_test.columns)
+    # Insert missing columns
     df_test = equalize_columns(df_test)
 
 
@@ -221,6 +228,7 @@ def two_second_count(flow):
 
     def _flag(row):
         if row['protocol_type'] == 'tcp':
+            #         print(flag_tcp[int(row['final_status'])-1])
             if row['final_status'] < 8:
                 return flag_tcp[int(row['final_status']) - 1]
             else:
@@ -300,6 +308,7 @@ def hundred_count(df, first, second):
         begin_ind = 100
     for i in range(begin_ind, first + second):
         tmp_df = df[i-100 :i].to_dict(orient='records')
+        # print(tmp_df)
         if len(tmp_df):
             same_ip, same_dip_dport, same_dip_sport, same_ip_syn, same_port_syn, same_dip_port_diff_sip  = 0, 0, 0, 0, 0, 0
 
@@ -324,31 +333,29 @@ def hundred_count(df, first, second):
                     elif j['flag'] in ['S0', 'S1', 'S2', 'S3']:
                         same_ip_syn += 1
             tmp_100.append(
-                list(tmp_df[-1].values()) + [same_ip, same_dip_dport, same_dip_dport / 100, (same_ip - same_dip_dport) / 100,
-                                             same_dip_sport / 100,same_dip_port_diff_sip / same_dip_dport,
+                list(tmp_df[-1].values()) + [same_ip, same_dip_sport / 100,same_dip_port_diff_sip / same_dip_dport,
                                              same_ip_syn / same_ip, same_port_syn / same_dip_dport])
 
     df_test = DataFrame(tmp_100, columns=['dip', 'dport', 'duration', 'src_bytes', 'dst_bytes', 'sip', 'sport',
                                           'protocol_type', 'land', 'flag', 'count', 'srv_count', 'same_srv_rate',
                                           'diff_srv_rate', 'serror_rate', 'srv_serror_rate', 'dst_host_count',
-                                          'dst_host_srv_count', 'dst_host_same_srv_rate', 'dst_host_diff_srv_rate',
                                           'dst_host_same_src_port_rate', 'dst_host_srv_diff_host_rate',
                                           'dst_host_serror_rate', 'dst_host_srv_serror_rate']).round(3)
     df_test = df_test.drop_duplicates(['dip', 'dport', 'sip', 'sport'])
     post_info = df_test[['dip', 'dport', 'sip', 'sport']].values.tolist()
 
-    # return df_test.loc[:, ['duration', 'protocol_type', 'flag', 'src_bytes', 'dst_bytes',
-    #                        'land', 'count', 'srv_count', 'same_srv_rate', 'diff_srv_rate',
-    #                        'serror_rate', 'srv_serror_rate', 'dst_host_count',
-    #                        'dst_host_same_src_port_rate', 'dst_host_srv_diff_host_rate',
-    #                        'dst_host_serror_rate', 'dst_host_srv_serror_rate']], post_info
-
     return df_test.loc[:, ['duration', 'protocol_type', 'flag', 'src_bytes', 'dst_bytes',
-                           'land', 'count', 'srv_count', 'same_srv_rate','diff_srv_rate',
+                           'land', 'count', 'srv_count', 'same_srv_rate', 'diff_srv_rate',
                            'serror_rate', 'srv_serror_rate', 'dst_host_count',
-                           'dst_host_srv_count', 'dst_host_same_srv_rate', 'dst_host_diff_srv_rate',
                            'dst_host_same_src_port_rate', 'dst_host_srv_diff_host_rate',
                            'dst_host_serror_rate', 'dst_host_srv_serror_rate']], post_info
+
+    # return df_test.loc[:, ['duration', 'protocol_type', 'flag', 'src_bytes', 'dst_bytes',
+    #                        'land', 'count', 'srv_count', 'same_srv_rate','diff_srv_rate',
+    #                        'serror_rate', 'srv_serror_rate', 'dst_host_count',
+    #                        'dst_host_srv_count', 'dst_host_same_srv_rate', 'dst_host_diff_srv_rate',
+    #                        'dst_host_same_src_port_rate', 'dst_host_srv_diff_host_rate',
+    #                        'dst_host_serror_rate', 'dst_host_srv_serror_rate']], post_info
 
 
 def make_data(flow, flow_first_len, flow_second_len):
@@ -371,6 +378,7 @@ def main(flow,model):
     :param df_train:
     :return: list. [{'content':['dip', 'dport', 'sip', 'sport'], 'error_type':error_type}, ...]
     '''
+    global DDOS_LEN, SCAN_LEN
     flow_first_len = len(flow[0])
     flow_second_len = len(flow[1])
     if flow_second_len + flow_first_len > 100:
@@ -385,11 +393,12 @@ def main(flow,model):
         seed = random.uniform(0.9, 0.96)
         for i in range(len(pred_max)):
             #攻击流量测试
-            if post_info[i][2] == 184291113:
-                logging.info("probe-{}-error_type-{}-".format(post_info[i], [error_type[pred_max[i]], round(float(pred[i][pred_max[i]]), 3)]))
-            if post_info[i][2] == 16843009:
-                logging.info("ddos-{}-error_type-{}-".format(post_info[i], [error_type[pred_max[i]],
-                                                                            round(float(pred[i][pred_max[i]]), 3)]))
+            # if post_info[i][2] == 184291113:
+            #     SCAN_LEN += 1
+            #     print('nmap', post_info[i], probe_ts, 'error_type', [error_type[pred_max[i]], round(float(pred[i][pred_max[i]]), 3)])
+            # if post_info[i][2] == 16843009:
+            #     DDOS_LEN += 1
+            #     print('ddos',post_info[i], probe_ts, 'error_type', [error_type[pred_max[i]], pred[i]])
             if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.5:
                 res.append({'content': post_info[i] + [probe_ts],
                             'error_type': [error_type[pred_max[i]], round(float(pred[i][pred_max[i]]*seed), 3)]})
@@ -403,20 +412,49 @@ def test_file(file_name):
     :param file_name: str. 测试文件的文件名
     :return:
     '''
+    true_nmap, false_nmap, true_ddos, false_ddos = 0,0,0,0
     with open(file_name, 'rb') as f:
-        model = load_model('model_test_all_29_1.h5')
+        model = load_model('model_test_all.h5')
 
         flows = f.read().split(b'|')
         flow_len = len(flows)
-        for i in range(flow_len-1):
+        print(flow_len)
+        for i in range(100):
+            print('###########{}#############: {}-{}-{}'.format(i, CONN_LEN, DDOS_LEN, SCAN_LEN))
             flow = [json.loads(flows[i]), json.loads(flows[i+1])]
             pred = main(flow, model)
             if pred:
+                for i in pred:
+                    if i['content'][2] == 184291113:
+                        true_nmap += 1
+                    elif i['content'][2] == 16843009:
+                        true_ddos += 1
+                    elif i['error_type'][0] == 'scan':
+                        false_nmap += 1
+                    else:
+                        false_ddos += 1
                 print(len(pred),pred)
+        print(CONN_LEN, DDOS_LEN, SCAN_LEN, true_nmap, false_nmap, true_ddos, false_ddos)
+        print('nmap:')
+        print('recall: {}'.format(true_nmap/SCAN_LEN))
+        print('precision: {}'.format(true_nmap/(true_nmap+false_nmap)))
+        print('F1: {}'.format(2*true_nmap/(true_nmap+false_nmap+SCAN_LEN)))
 
+        print('ddos:')
+        print('recall: {}'.format(true_ddos / DDOS_LEN))
+        print('precision: {}'.format(true_ddos / (true_ddos + false_ddos)))
+        print('F1: {}'.format(2 * true_ddos / (true_ddos + false_ddos + DDOS_LEN)))
 
 if __name__=='__main__':
+    # test_file('npm_test_ts_all.txt')
     test_file('testdata_all')
+    # with open('testdata', 'rb') as f:
+    #     flows = f.read().split(b'|')
+    #     for flow in flows:
+    #         for line in json.loads(flow):
+    #             flow = line.get('tcp') or line.get('http') or line.get('udp') or line.get('dns')
+    #             if flow['sip'] == 184291113:
+    #                 print(line)
 
 # import cProfile
 # cProfile.run("test_file('testdata')")
