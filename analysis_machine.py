@@ -335,7 +335,7 @@ def hundred_count(df, first, second):
                                           'dst_host_same_src_port_rate', 'dst_host_srv_diff_host_rate',
                                           'dst_host_serror_rate', 'dst_host_srv_serror_rate']).round(3)
     df_test = df_test.drop_duplicates(['dip', 'dport', 'sip', 'sport'])
-    post_info = df_test[['dip', 'dport', 'sip', 'sport', 'flag']].values.tolist()
+    post_info = df_test[['dip', 'dport', 'sip', 'sport']].values.tolist()
 
     # return df_test.loc[:, ['duration', 'protocol_type', 'flag', 'src_bytes', 'dst_bytes',
     #                        'land', 'count', 'srv_count', 'same_srv_rate', 'diff_srv_rate',
