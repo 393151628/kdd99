@@ -5,18 +5,16 @@ import random
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-import threading
-from sklearn import metrics
 from pandas import DataFrame
 from sklearn import preprocessing
-from sklearn.model_selection import train_test_split
+
 
 # Hyperparameters
-L1_HIDDEN = 150
-L2_HIDDEN = 100
-L3_HIDDEN = 50
-L4_HIDDEN = 25
-L5_HIDDEN = 10
+L1_HIDDEN = 375
+L2_HIDDEN = 200
+L3_HIDDEN = 150
+L4_HIDDEN = 75
+L5_HIDDEN = 50
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -52,11 +50,13 @@ def equalize_columns(df):
     """
 
     #删除字段多余属性
-    model_columns = ['duration', 'src_bytes', 'dst_bytes', 'count', 'serror_rate',
-       'dst_host_count', 'dst_host_same_src_port_rate', 'dst_host_serror_rate',
-       'outcome', 'protocol_type.tcp', 'protocol_type.udp', 'flag.OTH',
-       'flag.RSTR', 'flag.S0', 'flag.S1', 'flag.S2', 'flag.S3', 'flag.SF',
-       'land.0', 'land.1']
+    model_columns = ['duration', 'src_bytes', 'dst_bytes', 'count', 'srv_count',
+       'serror_rate', 'srv_serror_rate', 'same_srv_rate', 'diff_srv_rate',
+       'dst_host_count', 'dst_host_same_src_port_rate',
+       'dst_host_srv_diff_host_rate', 'dst_host_serror_rate',
+       'dst_host_srv_serror_rate', 'outcome', 'protocol_type.tcp',
+       'protocol_type.udp', 'flag.OTH', 'flag.RSTR', 'flag.S0', 'flag.S1',
+       'flag.S2', 'flag.S3', 'flag.SF', 'land.0', 'land.1']
     # print(df.columns)
     for column in model_columns:
         if column not in df.columns:
@@ -109,34 +109,39 @@ def check_res(res):
             sport_count[dip] = {sip: {sport: [item]}}
     for dip in dport_count:
         for sip in dport_count[dip]:
-            if len(dport_count[dip][sip]) > len(sport_count[dip][sip]) and len(dport_count[dip][sip]) > 3:
-                for dport in dport_count[dip][sip]:
-                    for k in dport_count[dip][sip][dport]:
-                        final_res.append({'content': k['content'],
-                                'error_type': ['scan', 0.99]})
-            elif len(dport_count[dip][sip]) < len(sport_count[dip][sip]) and len(sport_count[dip][sip]) > 3:
-                for sport in sport_count[dip][sip]:
-                    for k in sport_count[dip][sip][sport]:
-                        final_res.append({'content': k['content'],
-                                          'error_type': ['ddos', 0.99]})
-            else:
-                print(len(dport_count[dip][sip]) , len(sport_count[dip][sip]))
-                if len(dport_count[dip][sip]) > 3:
+            if len(dport_count[dip][sip]) > len(sport_count[dip][sip]):
+                if len(dport_count[dip][sip]) > 8:
+                    for dport in dport_count[dip][sip]:
+                        for k in dport_count[dip][sip][dport]:
+                            final_res.append({'content': k['content'],
+                                              'error_type': ['scan', 0.99]})
+                elif len(dport_count[dip][sip]) > 3:
+                    for dport in dport_count[dip][sip]:
+                        for k in dport_count[dip][sip][dport]:
+                            final_res.append({'content': k['content'],
+                                              'error_type': ['scan', k['error_type'][1]]})
+            elif len(dport_count[dip][sip]) < len(sport_count[dip][sip]):
+                if  len(sport_count[dip][sip]) > 8:
+                    for sport in sport_count[dip][sip]:
+                        for k in sport_count[dip][sip][sport]:
+                            final_res.append({'content': k['content'],
+                                              'error_type': ['ddos', 0.99]})
+                elif  len(sport_count[dip][sip]) > 3:
+                    for sport in sport_count[dip][sip]:
+                        for k in sport_count[dip][sip][sport]:
+                            final_res.append({'content': k['content'],
+                                              'error_type': ['ddos', k['error_type'][1]]})
+            elif len(dport_count[dip][sip]) > 10:
                     for dport in dport_count[dip][sip]:
                         for k in dport_count[dip][sip][dport]:
                             final_res.append(k)
-                else:
-                    for dport in dport_count[dip][sip]:
-                        if len(dport_count[dip][sip][dport]) > 3:
-                            for k in dport_count[dip][sip][dport]:
-                                final_res.append(k)
 
     return final_res
 
 def load_model(model_name):
     model = tf.contrib.keras.models.Sequential()
     model.add(tf.contrib.keras.layers.Dense(L1_HIDDEN,
-                                            input_dim=20,
+                                            input_dim=29,
                                             kernel_initializer='normal',
                                             activation='relu'))
     model.add(tf.contrib.keras.layers.Dropout(0.3))
@@ -182,23 +187,21 @@ def setup_data(df_test):
     encode_continuous_zscore(df_test, 'dst_bytes')
     encode_one_hot(df_test, 'land')
     encode_continuous_zscore(df_test, 'count')
-    # encode_continuous_zscore(df_test, 'srv_count')
+    encode_continuous_zscore(df_test, 'srv_count')
     encode_continuous_zscore(df_test, 'serror_rate')
-    # encode_continuous_zscore(df_test, 'srv_serror_rate')
-    # encode_continuous_zscore(df_test, 'same_srv_rate')
-    # encode_continuous_zscore(df_test, 'diff_srv_rate')
+    encode_continuous_zscore(df_test, 'srv_serror_rate')
+    encode_continuous_zscore(df_test, 'same_srv_rate')
+    encode_continuous_zscore(df_test, 'diff_srv_rate')
     encode_continuous_zscore(df_test, 'dst_host_count')
-    # encode_continuous_zscore(df_test, 'dst_host_srv_count')
-    # encode_continuous_zscore(df_test, 'dst_host_same_srv_rate')
-    # encode_continuous_zscore(df_test, 'dst_host_diff_srv_rate')
+    encode_continuous_zscore(df_test, 'dst_host_srv_count')
+    encode_continuous_zscore(df_test, 'dst_host_same_srv_rate')
+    encode_continuous_zscore(df_test, 'dst_host_diff_srv_rate')
     encode_continuous_zscore(df_test, 'dst_host_same_src_port_rate')
-    # encode_continuous_zscore(df_test, 'dst_host_srv_diff_host_rate')
+    encode_continuous_zscore(df_test, 'dst_host_srv_diff_host_rate')
     encode_continuous_zscore(df_test, 'dst_host_serror_rate')
-    # encode_continuous_zscore(df_test, 'dst_host_srv_serror_rate')
+    encode_continuous_zscore(df_test, 'dst_host_srv_serror_rate')
 
     df_test.dropna(inplace=True, axis=1)
-    # print(df_test.columns)
-    # Insert missing columns
     df_test = equalize_columns(df_test)
 
 
@@ -218,7 +221,6 @@ def two_second_count(flow):
 
     def _flag(row):
         if row['protocol_type'] == 'tcp':
-            #         print(flag_tcp[int(row['final_status'])-1])
             if row['final_status'] < 8:
                 return flag_tcp[int(row['final_status']) - 1]
             else:
@@ -233,8 +235,11 @@ def two_second_count(flow):
 
     for line in flow:
         if line.get('tcp') or line.get('http') or line.get('udp') or line.get('dns'):
-            tmp.append(line.get('tcp') or line.get('http') or line.get('udp') or line.get('dns'))
-    test = pd.concat([DataFrame(tmp), data], axis=1)
+            pro = line.get('tcp') or line.get('http') or line.get('udp') or line.get('dns')
+            if pro:
+                pro['type'] = line['type']
+                tmp.append(pro)
+    test = DataFrame(tmp)
 
     test.rename(columns={'in_bytes': 'src_bytes', 'out_bytes': 'dst_bytes', 'type':'protocol_type'}, inplace=True)
     test['service'] = 'http'
@@ -250,13 +255,32 @@ def two_second_count(flow):
 
     df_len = len(test)
     same_dip_count = test.groupby(['dip'])['protocol_type'].count()
+    same_dport_count = test.groupby(['dip', 'dport'])['protocol_type'].count()
+    same_tmp = (same_dport_count / df_len).round(3)
+
+    #same host count
     test['count'] = test.apply(lambda row: same_dip_count[row['dip']], axis=1)
 
+    #same host srv count
+    test['srv_count'] = test.apply(lambda row: same_dport_count[row['dip']][row['dport']], axis=1)
 
+    test['same_srv_rate'] = test.apply(lambda row: same_tmp[row['dip']][row['dport']], axis=1)
+    test['diff_srv_rate'] = test.apply(
+        lambda row: (same_dip_count[row['dip']] - same_dport_count[row['dip']][row['dport']]) / df_len, axis=1).round(3)
+
+    #same host SYN error rate
     syn_test = test[(test['flag'] == 'S0') | (test['flag'] == 'S1') | (test['flag'] == 'S2') | (test['flag'] == 'S3')]
     syn_ip_count = syn_test.groupby(['dip'])['protocol_type'].count().to_dict()
+    same_dport_count = test.groupby(['dip', 'dport'])['protocol_type'].count()
+    same_tmp = (same_dport_count / df_len).round(3)
+
     test.loc[:, 'serror_rate'] = test.apply(
         lambda row: (syn_ip_count.get(row['dip']) or 0) / same_dip_count[row['dip']], axis=1).round(3)
+
+    #same host server SYN error rate
+    syn_port_count = syn_test.groupby(['dip', 'dport'])['protocol_type'].count().to_dict()
+    test.loc[:, 'srv_serror_rate'] = test.apply(lambda row: (syn_port_count.get((row['dip'], row['dport'])) or 0) /
+                                                            same_dport_count[row['dip']][row['dport']], axis=1).round(3)
 
     return test
 
@@ -271,38 +295,60 @@ def hundred_count(df, first, second):
 
     tmp_100 = []
     if first > 100:
-        begin_ind = first - 100
+        begin_ind = first
     else:
         begin_ind = 100
-    for i in range(begin_ind, begin_ind + second):
-        tmp_df = df[i:i + 100].to_dict(orient='records')
-        # print(tmp_df)
+    for i in range(begin_ind, first + second):
+        tmp_df = df[i-100 :i].to_dict(orient='records')
         if len(tmp_df):
-            same_ip, same_ip_port, same_ip_syn  = 0, 0, 0
+            same_ip, same_dip_dport, same_dip_sport, same_ip_syn, same_port_syn, same_dip_port_diff_sip  = 0, 0, 0, 0, 0, 0
 
             dip = tmp_df[-1]['dip']
-            dport = tmp_df[-1]['dport']
+            sport = tmp_df[-1]['sport']
             sip = tmp_df[-1]['sip']
+            dport = tmp_df[-1]['dport']
             #     print(dip, dport, sip)
             for j in tmp_df:
                 if j['dip'] == dip:
                     same_ip += 1
                     if j['dport'] == dport:
-                        same_ip_port += 1
+                        same_dip_dport += 1
+                        if j['flag'] in ['S0', 'S1', 'S2', 'S3']:
+                            same_port_syn += 1
+                        if j['sip'] != sip:
+                            same_dip_port_diff_sip += 1
+                    if j['sport'] == sport:
+                        same_dip_sport += 1
+
+
                     elif j['flag'] in ['S0', 'S1', 'S2', 'S3']:
                         same_ip_syn += 1
             tmp_100.append(
-                list(tmp_df[-1].values()) + [same_ip, (same_ip - same_ip_port) / 100, same_ip_syn / same_ip])
+                list(tmp_df[-1].values()) + [same_ip, same_dip_dport, same_dip_dport / 100, (same_ip - same_dip_dport) / 100,
+                                             same_dip_sport / 100,same_dip_port_diff_sip / same_dip_dport,
+                                             same_ip_syn / same_ip, same_port_syn / same_dip_dport])
 
     df_test = DataFrame(tmp_100, columns=['dip', 'dport', 'duration', 'src_bytes', 'dst_bytes', 'sip', 'sport',
-                                        'protocol_type','land', 'flag', 'count', 'serror_rate','dst_host_count',
-                                        'dst_host_same_src_port_rate', 'dst_host_serror_rate']).round(3)
-    df_test = df_test.drop_duplicates(['dip',  'dport', 'sip', 'sport'])
-    post_info = df_test[['dip', 'dport', 'sip', 'sport']].values.tolist()
+                                          'protocol_type', 'land', 'flag', 'count', 'srv_count', 'same_srv_rate',
+                                          'diff_srv_rate', 'serror_rate', 'srv_serror_rate', 'dst_host_count',
+                                          'dst_host_srv_count', 'dst_host_same_srv_rate', 'dst_host_diff_srv_rate',
+                                          'dst_host_same_src_port_rate', 'dst_host_srv_diff_host_rate',
+                                          'dst_host_serror_rate', 'dst_host_srv_serror_rate']).round(3)
+    df_test = df_test.drop_duplicates(['dip', 'dport', 'sip', 'sport'])
+    post_info = df_test[['dip', 'dport', 'sip', 'sport', 'flag']].values.tolist()
+
+    # return df_test.loc[:, ['duration', 'protocol_type', 'flag', 'src_bytes', 'dst_bytes',
+    #                        'land', 'count', 'srv_count', 'same_srv_rate', 'diff_srv_rate',
+    #                        'serror_rate', 'srv_serror_rate', 'dst_host_count',
+    #                        'dst_host_same_src_port_rate', 'dst_host_srv_diff_host_rate',
+    #                        'dst_host_serror_rate', 'dst_host_srv_serror_rate']], post_info
 
     return df_test.loc[:, ['duration', 'protocol_type', 'flag', 'src_bytes', 'dst_bytes',
-                           'land', 'count', 'serror_rate', 'dst_host_count', 'dst_host_same_src_port_rate',
-                           'dst_host_serror_rate']], post_info
+                           'land', 'count', 'srv_count', 'same_srv_rate','diff_srv_rate',
+                           'serror_rate', 'srv_serror_rate', 'dst_host_count',
+                           'dst_host_srv_count', 'dst_host_same_srv_rate', 'dst_host_diff_srv_rate',
+                           'dst_host_same_src_port_rate', 'dst_host_srv_diff_host_rate',
+                           'dst_host_serror_rate', 'dst_host_srv_serror_rate']], post_info
 
 
 def make_data(flow, flow_first_len, flow_second_len):
@@ -325,7 +371,6 @@ def main(flow,model):
     :param df_train:
     :return: list. [{'content':['dip', 'dport', 'sip', 'sport'], 'error_type':error_type}, ...]
     '''
-    # model = load_model('model_test_1.1.h5')
     flow_first_len = len(flow[0])
     flow_second_len = len(flow[1])
     if flow_second_len + flow_first_len > 100:
@@ -336,11 +381,14 @@ def main(flow,model):
         pred = model.predict(x_test)
         pred_max = np.argmax(pred, axis=1)
         res = []
-        error_type = {0: 'ddos', 2: 'scan'}
-        seed = random.uniform(0.8, 0.95)
+        error_type = {0: 'ddos', 2: 'probe', 1: 'normal'}
+        seed = random.uniform(0.9, 0.96)
         for i in range(len(pred_max)):
-            if post_info[i][0] == 184312605.0:
-                logging.info("10.252.99.29: {}".format(pred_max[i]))
+            #攻击流量测试
+            # if post_info[i][2] == 184291113:
+            #     print('nmap', post_info[i], probe_ts, 'error_type', [error_type[pred_max[i]], round(float(pred[i][pred_max[i]]), 3)])
+            # if post_info[i][2] == 16843009:
+            #     print('ddos',post_info[i], probe_ts, 'error_type', [error_type[pred_max[i]], pred[i]])
             if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.5:
                 res.append({'content': post_info[i] + [probe_ts],
                             'error_type': [error_type[pred_max[i]], round(float(pred[i][pred_max[i]]*seed), 3)]})
@@ -354,18 +402,20 @@ def test_file(file_name):
     :param file_name: str. 测试文件的文件名
     :return:
     '''
-    with open(file_name, 'r') as f:
-        model = load_model('model_test_1.1.h5')
-        for i in range(3):
-            print('###### {} ######'.format(i))
-            flow = [json.loads(f.readline().replace("'", '"').replace('u"', '"')) for line in range(2)]
+    with open(file_name, 'rb') as f:
+        model = load_model('model_test_all_29_1.h5')
+
+        flows = f.read().split(b'|')
+        flow_len = len(flows)
+        for i in range(flow_len-1):
+            flow = [json.loads(flows[i]), json.loads(flows[i+1])]
             pred = main(flow, model)
             if pred:
-                print(pred)
+                print(len(pred),pred)
 
 
 if __name__=='__main__':
-    test_file('npm_test_ts_all.txt')
+    test_file('testdata_all')
 
 # import cProfile
-# cProfile.run("test_file('npm_test_ts_all.txt')")
+# cProfile.run("test_file('testdata')")
