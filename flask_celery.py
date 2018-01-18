@@ -2,10 +2,9 @@
 import logging
 import socket
 import struct
-import datetime
-
+import time
 import os
-
+import datetime
 import numpy as np
 from celery import Celery
 
@@ -166,5 +165,6 @@ def my_celery(data):
                 'error_type': error_type[0],
                 'error_per': str(error_type[1]),
                 'timestamp': str(int(timestamp)),
+                'created_time': str(int(time.time())),
             }
             Flow.objects.create(**kwargs)

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 from flask_mongoengine import MongoEngine
+import time
 
 db = MongoEngine()
 
@@ -13,7 +14,7 @@ class Flow(db.Document):
     error_type = db.StringField()
     error_per = db.StringField()
     timestamp = db.StringField()
-    created_time = db.DateTimeField(auto_now_add=True, default=datetime.now())
+    created_time = db.StringField()
 
     meta = {
         'collection': 'flow',
