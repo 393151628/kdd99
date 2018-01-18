@@ -165,6 +165,6 @@ def my_celery(data):
                 'error_type': error_type[0],
                 'error_per': str(error_type[1]),
                 'timestamp': str(int(timestamp)),
-                'created_time': str(int(time.time())),
+                'createdtime': str(int(time.time())),
             }
             Flow.objects.create(**kwargs)
