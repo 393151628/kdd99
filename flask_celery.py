@@ -7,7 +7,6 @@ import datetime
 import os
 
 import numpy as np
-from flask import Flask
 from celery import Celery
 
 from analysis import create_app
@@ -140,11 +139,7 @@ class SingletonModel(object):
 
 @celery.task
 def my_celery(data):
-    start = datetime.datetime.now()
     m = SingletonModel()
-    end = datetime.datetime.now()
-    a = (end - start).seconds
-    logging.info('加载时间:{0}'.format(a))
     model = m.model
     # logging.info('receive data numbers1111111111111: {0}'.format(len(data)))
     queue = data

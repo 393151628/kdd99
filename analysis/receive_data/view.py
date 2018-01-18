@@ -1,59 +1,30 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
-import datetime
-import logging
-import socket
-import struct
+import redis
 
-from analysis.models import Flow
-from flask_celery import my_celery
 from analysis.receive_data import receive_blueprint
 from flask import request
 from flask_restful import Api, Resource
-from flask_celery import create_queue
-
-from analysis_machine import main
+from config import configs, ENV
+from flask_celery import my_celery
 
 api = Api(receive_blueprint)
-
-
-class SingletonQueue(object):
-    __instance = None
-    queque = []
-
-    def __init__(self):
-        pass
-
-    def __new__(cls, *args, **kwd):
-        if SingletonQueue.__instance is None:
-            SingletonQueue.__instance = object.__new__(cls, *args, **kwd)
-        return SingletonQueue.__instance
-
-    def set_queue(self, d):
-        self.queque.append(d)
-
-    def get_queue(self):
-        return self.queque
-
-    def clear_queue(self):
-        self.queque = []
 
 
 class ReciveData(Resource):
     def post(self):
         data = request.get_data()
-        data = json.loads(data)
-        logging.info('receive data numbers: {0}'.format(len(data)))
-        queue_obj = SingletonQueue()
-        queue_obj.set_queue(data)
-        queue = queue_obj.get_queue()
-        if len(queue) == 2:
+        r = redis.Redis(connection_pool=configs[ENV].redis_pool, db=1)
+        if r.exists('data'):
+            data1 = json.loads(r.get('data'))
+            data2 = json.loads(data)
+            logging.info('send celery numbers: {0}****************{1}'.format(len(data1), len(data2)))
+            queue = [data1, data2]
             task = my_celery.apply_async(args=[queue])
-            logging.info('send celery numbers: {0}****************{1}'.format(len(queue[0]), len(queue[1])))
-            queue_obj.clear_queue()
-
-        # task = my_celery.apply_async(args=[data])
+            r.delete('data')
+        else:
+            r.set('data', data)
         return 'success'
 
 # class ReciveDataFile(Resource):

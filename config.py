@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 import os
-import numpy as np
+import redis
 
-from analysis_machine import load_model
 
 ENV = 'dev'
 basedir = os.path.abspath(os.path.dirname(__file__))
-# model_name = 'model_ip_port.h5'
-# model = load_model(os.path.join(basedir, 'analysis', 'utils', model_name))
-# model.predict(np.zeros((1, 25)))
+
 
 
 class DevelopConfig(object):
@@ -28,6 +25,11 @@ class DevelopConfig(object):
         '172',
         '192',
     ]
+
+    # redis
+    redis_host = '10.252.99.41'
+    redis_port = '6379'
+    redis_pool = redis.ConnectionPool(host=redis_host, port=redis_port)
 
 
 configs = {
