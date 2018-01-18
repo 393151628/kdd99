@@ -44,16 +44,17 @@ class AbnormalEvent(Resource):
         logging.info(time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(time.time())) + ' : get abnormal event.')
         time_strip = int(time.mktime(time.localtime()))
         count, att, eventList = [], [], []
-        his_num = Flow.objects.filter(created_time__gt=str(time_strip-time_strip%86400),created_time__lte=str(time_strip-60)).count()
+        his_num = Flow.objects.filter(timestamp__gt=str(time_strip-time_strip%86400),timestamp__lte=str(time_strip-60)).count()
         # logging.info('his_num: {}'.format(his_num))
-        event_obj = Flow.objects.filter(created_time__gt=str(time_strip-60),created_time__lte=str(time_strip)).limit(100)
+        a = Flow.objects.filter(created_time__exists=True)
+        event_obj = a.filter(created_time__gt=str(time_strip-60),created_time__lte=str(time_strip))
         event_all = [[event.id, event.dip, event.dport, event.sip, event.sport, event.error_type, event.error_per, event.timestamp] for event in event_obj]
         event_df = pd.DataFrame(event_all, columns=['id', 'dip', 'dport', 'sip', 'sport', 'error_type', 'error_per', 'timestamp'])
 
         event_count = event_df.groupby('timestamp')['dip'].count()
 
         #实时数据
-        beg_time = int(time_strip)
+        beg_time = int(event_count.index[-1])
         # beg_time = int(event_count.index[-1])
         cur_count = event_count.reindex(index=[str(beg_time + i) for i in range(-59,1)], fill_value=0)
         cst_tz = timezone('Asia/Shanghai')
