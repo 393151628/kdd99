@@ -20,13 +20,13 @@ platforms.C_FORCE_ROOT = True
 
 app = create_app(ENV, name=__name__)
 app.config['CELERY_BROKER_URL'] = 'redis://10.252.99.41:6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://10.252.99.41:6379/0'
+# app.config['CELERY_RESULT_BACKEND'] = 'redis://10.252.99.41:6379/0'
 
 
 def make_celery(_app):
     _celery = Celery(_app.name,
-                     broker=_app.config['CELERY_BROKER_URL'],
-                     backend=_app.config['CELERY_RESULT_BACKEND']
+                     broker=_app.config['CELERY_BROKER_URL']
+                     # backend=_app.config['CELERY_RESULT_BACKEND']
                      )
 
     # TaskBase = _celery.Task
