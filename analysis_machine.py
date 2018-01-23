@@ -10,6 +10,11 @@ import pandas as pd
 import tensorflow as tf
 from pandas import DataFrame
 from sklearn import preprocessing
+from keras.preprocessing import sequence
+from keras.models import Sequential
+from keras.layers.core import Dense, Dropout, Activation
+from keras.layers.embeddings import Embedding
+from keras.layers.recurrent import LSTM
 
 # Hyperparameters
 L1_HIDDEN = 375
@@ -20,6 +25,7 @@ L5_HIDDEN = 50
 CONN_LEN = 0
 DDOS_LEN = 0
 SCAN_LEN = 0
+model_name = 'lstm_model.h5'
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -370,7 +376,49 @@ def make_data(flow, flow_first_len, flow_second_len):
 
     return df_test, post_info
 
-def main(flow,model):
+def build_model(max_features, maxlen):
+    """Build LSTM model"""
+    dga_model = Sequential()
+    dga_model.add(Embedding(max_features, 128, input_length=maxlen))
+    dga_model.add(LSTM(128))
+    dga_model.add(Dropout(0.5))
+    dga_model.add(Dense(1))
+    dga_model.add(Activation('sigmoid'))
+
+    dga_model.compile(loss='binary_crossentropy',
+                  optimizer='rmsprop')
+
+    return dga_model
+
+def dga_train(dns_test, dga_model):
+    valid_chars = {'2': 1, 's': 2, 'r': 3, 'q': 4, '1': 5, 'n': 6, 'p': 7, 'c': 8, 'g': 9, 'j': 10, 'm': 11, '5': 12,
+                   'o': 13, '8': 14, 'x': 15, 'a': 16, 'w': 17, 'z': 18, '6': 19, 'b': 20, 't': 21, 'u': 22, 'e': 23,
+                   '4': 24, 'l': 25, '3': 26, 'i': 27, '-': 28, 'h': 29, 'v': 30, 'k': 31, 'y': 32, '7': 33, '9': 34,
+                   'f': 35, 'd': 36, '0': 37}
+
+    X = [[valid_chars[y] for y in x] for x in dns_test]
+    X = sequence.pad_sequences(X, maxlen=53)
+    dga_model.load_weights(model_name)
+    probs = dga_model.predict_proba(X)
+    return probs
+
+def dga_check(flow, dga_model):
+    flow = flow[0]+flow[1]
+    dns_test, dns_check, dns_info, dga_res = [], [], [], []
+    for event in flow:
+        if event['type'] == 'dns':
+            dns_test.append(event['dns']['req_name'].partition('.')[0])
+            dns_info.append({'content': [event['dns']['dip'], event['dns']['dport'], event['dns']['sip'],
+                                        event['dns']['sport'], event['probe_ts']]})
+    if dns_test:
+        dns_check = dga_train(dns_test, dga_model)
+    for ival, val in enumerate(dns_check):
+        if val[0] > 0.8:
+            dga_res.append({'content': dns_info[ival]['content'],
+                            'error_type': ['DGA', round(val[0], 3)]})
+    return dga_res
+
+def main(flow, model, dga_model):
     '''
     模型主控程序
     :param flow: list.
@@ -381,6 +429,7 @@ def main(flow,model):
     global DDOS_LEN, SCAN_LEN
     flow_first_len = len(flow[0])
     flow_second_len = len(flow[1])
+    res = []
     if flow_second_len + flow_first_len > 100:
         probe_ts = flow[1][0]["probe_ts"]
         df_test, post_info = make_data(flow, flow_first_len, flow_second_len)
@@ -388,9 +437,9 @@ def main(flow,model):
         x_test, y_test = to_xy(df_test, 'outcome')
         pred = model.predict(x_test)
         pred_max = np.argmax(pred, axis=1)
-        res = []
         error_type = {0: 'ddos', 2: 'probe', 1: 'normal'}
         seed = random.uniform(0.9, 0.96)
+        tmp_res = []
         for i in range(len(pred_max)):
             #攻击流量测试
             # if post_info[i][2] == 184291113:
@@ -400,11 +449,14 @@ def main(flow,model):
             #     DDOS_LEN += 1
             #     print('ddos',post_info[i], probe_ts, 'error_type', [error_type[pred_max[i]], pred[i]])
             if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.5:
-                res.append({'content': post_info[i] + [probe_ts],
-                            'error_type': [error_type[pred_max[i]], round(float(pred[i][pred_max[i]]*seed), 3)]})
-        if len(res)>5:
-            return check_res(res)
-    return []
+                tmp_res.append({'content': post_info[i] + [probe_ts],
+                                'error_type': [error_type[pred_max[i]], round(float(pred[i][pred_max[i]] * seed), 3)]})
+        if len(tmp_res) > 5:
+            res = check_res(tmp_res)
+    dga_res = dga_check(flow, dga_model)
+    if dga_res:
+        res.extend(dga_res)
+    return res
 
 def test_file(file_name):
     '''
@@ -413,16 +465,18 @@ def test_file(file_name):
     :return:
     '''
     true_nmap, false_nmap, true_ddos, false_ddos = 0,0,0,0
+    max_features = 38
+    maxlen = 53
     with open(file_name, 'rb') as f:
         model = load_model('model_test_all.h5')
-
+        dga_model = build_model(max_features, maxlen)
         flows = f.read().split(b'|')
         flow_len = len(flows)
         print(flow_len)
         for i in range(100):
             print('###########{}#############: {}-{}-{}'.format(i, CONN_LEN, DDOS_LEN, SCAN_LEN))
             flow = [json.loads(flows[i]), json.loads(flows[i+1])]
-            pred = main(flow, model)
+            pred = main(flow, model, dga_model)
             if pred:
                 for i in pred:
                     if i['content'][2] == 184291113:
