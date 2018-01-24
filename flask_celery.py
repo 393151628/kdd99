@@ -140,6 +140,7 @@ class SingletonModel(object):
             dga_model_name = 'lstm_model.h5'
             cls.dga_model = build_model(cls.max_features, cls.maxlen)
             cls.dga_model.load_weights(os.path.join(basedir, 'analysis', 'utils', dga_model_name))
+            cls.dga_model = cls.dga_model
 
         return SingletonModel.__instance
 
