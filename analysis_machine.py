@@ -398,7 +398,6 @@ def dga_train(dns_test, dga_model):
 
     X = [[valid_chars[y] for y in x] for x in dns_test]
     X = sequence.pad_sequences(X, maxlen=53)
-    dga_model.load_weights(model_name)
     probs = dga_model.predict_proba(X)
     return probs
 
@@ -470,6 +469,7 @@ def test_file(file_name):
     with open(file_name, 'rb') as f:
         model = load_model('model_test_all.h5')
         dga_model = build_model(max_features, maxlen)
+        dga_model.load_weights(model_name)
         flows = f.read().split(b'|')
         flow_len = len(flows)
         print(flow_len)

@@ -10,7 +10,7 @@ from celery import Celery
 
 from analysis import create_app
 from analysis.models import Flow
-from analysis_machine import main, load_model
+from analysis_machine import main, load_model, build_model
 from celery import platforms
 from config import ENV
 
@@ -123,6 +123,9 @@ def create_queue(data):
 class SingletonModel(object):
     __instance = None
     model = ''
+    dga_model = ''
+    max_features = 38
+    maxlen = 53
 
     def __init__(self):
         pass
@@ -134,18 +137,23 @@ class SingletonModel(object):
             model_name = 'model_ip_port.h5'
             cls.model = load_model(os.path.join(basedir, 'analysis', 'utils', model_name))
             cls.model.predict(np.zeros((1, 25)))
+            dga_model_name = 'lstm_model.h5'
+            cls.dga_model = build_model(cls.max_features, cls.maxlen)
+            cls.dga_model.load_weights(os.path.join(basedir, 'analysis', 'utils', dga_model_name))
+
         return SingletonModel.__instance
 
 @celery.task
 def my_celery(data):
     m = SingletonModel()
     model = m.model
+    dga_model = m.dga_model
     # logging.info('receive data numbers1111111111111: {0}'.format(len(data)))
     queue = data
     if queue:
         logging.info('******{0}, {1}, **********'.format(len(queue[0]), len(queue[1])))
         start = datetime.datetime.now()
-        res = main(queue, model)
+        res = main(queue, model, dga_model)
         # model.predict(np.zeros((1, 25)))
         end = datetime.datetime.now()
         a = (end - start).seconds
