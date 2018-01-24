@@ -124,6 +124,7 @@ class SingletonModel(object):
     __instance = None
     model = ''
     dga_model = ''
+    dga_model_name = ''
     max_features = 38
     maxlen = 53
 
@@ -137,10 +138,8 @@ class SingletonModel(object):
             model_name = 'model_ip_port.h5'
             cls.model = load_model(os.path.join(basedir, 'analysis', 'utils', model_name))
             cls.model.predict(np.zeros((1, 25)))
-            dga_model_name = 'lstm_model.h5'
+            cls.dga_model_name = os.path.join(basedir, 'analysis', 'utils', 'lstm_model.h5')
             cls.dga_model = build_model(cls.max_features, cls.maxlen)
-            cls.dga_model.load_weights(os.path.join(basedir, 'analysis', 'utils', dga_model_name))
-            cls.dga_model = cls.dga_model
 
         return SingletonModel.__instance
 
@@ -149,12 +148,13 @@ def my_celery(data):
     m = SingletonModel()
     model = m.model
     dga_model = m.dga_model
+    dga_model_name = m.dga_model_name
     # logging.info('receive data numbers1111111111111: {0}'.format(len(data)))
     queue = data
     if queue:
         logging.info('******{0}, {1}, **********'.format(len(queue[0]), len(queue[1])))
         start = datetime.datetime.now()
-        res = main(queue, model, dga_model)
+        res = main(queue, model, dga_model, dga_model_name)
         # model.predict(np.zeros((1, 25)))
         end = datetime.datetime.now()
         a = (end - start).seconds
