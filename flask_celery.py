@@ -18,6 +18,8 @@ platforms.C_FORCE_ROOT = True
 
 app = create_app(ENV, name=__name__)
 app.config['CELERY_BROKER_URL'] = 'redis://10.252.99.41:6379/0'
+
+
 # app.config['CELERY_RESULT_BACKEND'] = 'redis://10.252.99.41:6379/0'
 
 
@@ -123,10 +125,6 @@ def create_queue(data):
 class SingletonModel(object):
     __instance = None
     model = ''
-    dga_model = ''
-    dga_model_name = ''
-    max_features = 38
-    maxlen = 53
 
     def __init__(self):
         pass
@@ -138,23 +136,42 @@ class SingletonModel(object):
             model_name = 'model_ip_port.h5'
             cls.model = load_model(os.path.join(basedir, 'analysis', 'utils', model_name))
             cls.model.predict(np.zeros((1, 25)))
-            cls.dga_model_name = os.path.join(basedir, 'analysis', 'utils', 'lstm_model.h5')
-            cls.dga_model = build_model(cls.max_features, cls.maxlen)
-
         return SingletonModel.__instance
+
+
+class SingletonDGAModel(object):
+    __instance = None
+    model = ''
+    max_features = 38
+    maxlen = 53
+
+    def __init__(self):
+        pass
+
+    def __new__(cls, *args, **kwd):
+        if SingletonDGAModel.__instance is None:
+            SingletonDGAModel.__instance = object.__new__(cls, *args, **kwd)
+            basedir = os.path.abspath(os.path.dirname(__file__))
+            model_name = 'lstm_model.h5'
+            cls.model = build_model(cls.max_features, cls.maxlen,
+                                    os.path.join(basedir, 'analysis', 'utils', model_name))
+            cls.model.predict([[16 for i in range(53)]])
+
+        return SingletonDGAModel.__instance
+
 
 @celery.task
 def my_celery(data):
     m = SingletonModel()
+    dga = SingletonDGAModel()
     model = m.model
-    dga_model = m.dga_model
-    dga_model_name = m.dga_model_name
+    dga_model = dga.dga_model
     # logging.info('receive data numbers1111111111111: {0}'.format(len(data)))
     queue = data
     if queue:
         logging.info('******{0}, {1}, **********'.format(len(queue[0]), len(queue[1])))
         start = datetime.datetime.now()
-        res = main(queue, model, dga_model, dga_model_name)
+        res = main(queue, model, dga_model)
         # model.predict(np.zeros((1, 25)))
         end = datetime.datetime.now()
         a = (end - start).seconds

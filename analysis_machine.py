@@ -376,7 +376,7 @@ def make_data(flow, flow_first_len, flow_second_len):
 
     return df_test, post_info
 
-def build_model(max_features, maxlen):
+def build_model(max_features, maxlen, dga_model_name):
     """Build LSTM model"""
     dga_model = Sequential()
     dga_model.add(Embedding(max_features, 128, input_length=maxlen))
@@ -388,9 +388,11 @@ def build_model(max_features, maxlen):
     dga_model.compile(loss='binary_crossentropy',
                   optimizer='rmsprop')
 
+    dga_model.load_weights(dga_model_name)
+
     return dga_model
 
-def dga_train(dns_test, dga_model, dga_model_name):
+def dga_train(dns_test, dga_model):
     valid_chars = {'2': 1, 's': 2, 'r': 3, 'q': 4, '1': 5, 'n': 6, 'p': 7, 'c': 8, 'g': 9, 'j': 10, 'm': 11, '5': 12,
                    'o': 13, '8': 14, 'x': 15, 'a': 16, 'w': 17, 'z': 18, '6': 19, 'b': 20, 't': 21, 'u': 22, 'e': 23,
                    '4': 24, 'l': 25, '3': 26, 'i': 27, '-': 28, 'h': 29, 'v': 30, 'k': 31, 'y': 32, '7': 33, '9': 34,
@@ -398,11 +400,10 @@ def dga_train(dns_test, dga_model, dga_model_name):
 
     X = [[valid_chars[y] for y in x] for x in dns_test]
     X = sequence.pad_sequences(X, maxlen=53)
-    dga_model.load_weights(dga_model_name)
     probs = dga_model.predict_proba(X)
     return probs
 
-def dga_check(flow, dga_model, dga_model_name):
+def dga_check(flow, dga_model):
     flow = flow[0]+flow[1]
     dns_test, dns_check, dns_info, dga_res = [], [], [], []
     for event in flow:
@@ -411,14 +412,14 @@ def dga_check(flow, dga_model, dga_model_name):
             dns_info.append({'content': [event['dns']['dip'], event['dns']['dport'], event['dns']['sip'],
                                         event['dns']['sport'], event['probe_ts']]})
     if dns_test:
-        dns_check = dga_train(dns_test, dga_model, dga_model_name)
+        dns_check = dga_train(dns_test, dga_model)
     for ival, val in enumerate(dns_check):
         if val[0] > 0.8:
             dga_res.append({'content': dns_info[ival]['content'],
                             'error_type': ['DGA', round(val[0], 3)]})
     return dga_res
 
-def main(flow, model, dga_model, dga_model_name):
+def main(flow, model, dga_model):
     '''
     模型主控程序
     :param flow: list.
@@ -453,7 +454,7 @@ def main(flow, model, dga_model, dga_model_name):
                                 'error_type': [error_type[pred_max[i]], round(float(pred[i][pred_max[i]] * seed), 3)]})
         if len(tmp_res) > 5:
             res = check_res(tmp_res)
-    dga_res = dga_check(flow, dga_model, dga_model_name)
+    dga_res = dga_check(flow, dga_model)
     if dga_res:
         res.extend(dga_res)
     return res
@@ -469,8 +470,8 @@ def test_file(file_name):
     maxlen = 53
     with open(file_name, 'rb') as f:
         model = load_model('model_test_all.h5')
-        dga_model = build_model(max_features, maxlen)
         dga_model_name = model_name
+        dga_model = build_model(max_features, maxlen, dga_model_name)
         flows = f.read().split(b'|')
         flow_len = len(flows)
         print(flow_len)
