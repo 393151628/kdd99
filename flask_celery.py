@@ -165,7 +165,7 @@ def my_celery(data):
     m = SingletonModel()
     dga = SingletonDGAModel()
     model = m.model
-    dga_model = dga.dga_model
+    dga_model = dga.model
     # logging.info('receive data numbers1111111111111: {0}'.format(len(data)))
     queue = data
     if queue:
