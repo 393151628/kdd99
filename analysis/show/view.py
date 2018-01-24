@@ -52,7 +52,7 @@ class AbnormalEvent(Resource):
         event_obj = Flow.objects.filter(createdtime__gt=str(last_minute), createdtime__lte=str(time_strip))
         event_all = [
             [event.id, event.dip, event.dport, event.sip, event.sport, event.error_type, event.error_per,
-             event.timestamp]
+             event.createdtime]
             for event in event_obj
         ]
         event_df = pd.DataFrame(event_all,
