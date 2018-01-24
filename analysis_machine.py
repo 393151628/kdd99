@@ -398,7 +398,7 @@ def dga_train(dns_test, dga_model):
                    '4': 24, 'l': 25, '3': 26, 'i': 27, '-': 28, 'h': 29, 'v': 30, 'k': 31, 'y': 32, '7': 33, '9': 34,
                    'f': 35, 'd': 36, '0': 37}
 
-    X = [[valid_chars[y] for y in x] for x in dns_test]
+    X = [[valid_chars[y] for y in x if valid_chars.get(y)] for x in dns_test]
     X = sequence.pad_sequences(X, maxlen=53)
     probs = dga_model.predict_proba(X)
     return probs
