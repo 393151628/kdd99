@@ -8,6 +8,7 @@ import random
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import tldextract
 from pandas import DataFrame
 from sklearn import preprocessing
 from keras.preprocessing import sequence
@@ -119,28 +120,28 @@ def check_res(res):
     for dip in dport_count:
         for sip in dport_count[dip]:
             if len(dport_count[dip][sip]) > len(sport_count[dip][sip]):
-                if len(dport_count[dip][sip]) > 8:
+                if len(dport_count[dip][sip]) > 10:
                     for dport in dport_count[dip][sip]:
                         for k in dport_count[dip][sip][dport]:
                             final_res.append({'content': k['content'],
-                                              'error_type': ['scan', 0.99]})
-                elif len(dport_count[dip][sip]) > 3:
+                                              'error_type': ['scan', 0.98]})
+                elif len(dport_count[dip][sip]) > 5:
                     for dport in dport_count[dip][sip]:
                         for k in dport_count[dip][sip][dport]:
                             final_res.append({'content': k['content'],
                                               'error_type': ['scan', k['error_type'][1]]})
             elif len(dport_count[dip][sip]) < len(sport_count[dip][sip]):
-                if  len(sport_count[dip][sip]) > 8:
+                if  len(sport_count[dip][sip]) > 10:
                     for sport in sport_count[dip][sip]:
                         for k in sport_count[dip][sip][sport]:
                             final_res.append({'content': k['content'],
                                               'error_type': ['ddos', 0.99]})
-                elif  len(sport_count[dip][sip]) > 3:
+                elif  len(sport_count[dip][sip]) > 5:
                     for sport in sport_count[dip][sip]:
                         for k in sport_count[dip][sip][sport]:
                             final_res.append({'content': k['content'],
                                               'error_type': ['ddos', k['error_type'][1]]})
-            elif len(dport_count[dip][sip]) > 10:
+            elif len(dport_count[dip][sip]) > 15:
                     for dport in dport_count[dip][sip]:
                         for k in dport_count[dip][sip][dport]:
                             final_res.append(k)
@@ -393,10 +394,9 @@ def build_model(max_features, maxlen, dga_model_name):
     return dga_model
 
 def dga_train(dns_test, dga_model):
-    valid_chars = {'2': 1, 's': 2, 'r': 3, 'q': 4, '1': 5, 'n': 6, 'p': 7, 'c': 8, 'g': 9, 'j': 10, 'm': 11, '5': 12,
-                   'o': 13, '8': 14, 'x': 15, 'a': 16, 'w': 17, 'z': 18, '6': 19, 'b': 20, 't': 21, 'u': 22, 'e': 23,
-                   '4': 24, 'l': 25, '3': 26, 'i': 27, '-': 28, 'h': 29, 'v': 30, 'k': 31, 'y': 32, '7': 33, '9': 34,
-                   'f': 35, 'd': 36, '0': 37}
+    valid_chars = {'7': 1, '4': 2, 'b': 3, '9': 4, '5': 5, 'k': 6, 'o': 7, 'v': 8, 'h': 9, 'i': 10, '8': 11, 'y': 12, '2': 13,
+                   '1': 14, '6': 15, '-': 16, 'u': 17, 'g': 18, 'w': 19, '3': 20, 'q': 21, 'z': 22, 'x': 23, 's': 24, 'a': 25,
+                   't': 26, 'l': 27, 'p': 28, 'e': 29, 'm': 30, 'n': 31, 'f': 32, '0': 33, 'c': 34, 'r': 35, 'j': 36, 'd': 37}
 
     X = [[valid_chars[y] for y in x if valid_chars.get(y)] for x in dns_test]
     X = sequence.pad_sequences(X, maxlen=53)
@@ -408,7 +408,7 @@ def dga_check(flow, dga_model):
     dns_test, dns_check, dns_info, dga_res = [], [], [], []
     for event in flow:
         if event['type'] == 'dns':
-            dns_test.append(event['dns']['req_name'].partition('.')[0])
+            dns_test.append(tldextract.extract(event['dns']['req_name']).domain)
             dns_info.append({'content': [event['dns']['dip'], event['dns']['dport'], event['dns']['sip'],
                                         event['dns']['sport'], event['probe_ts']]})
     if dns_test:
@@ -478,7 +478,7 @@ def test_file(file_name):
         for i in range(100):
             print('###########{}#############: {}-{}-{}'.format(i, CONN_LEN, DDOS_LEN, SCAN_LEN))
             flow = [json.loads(flows[i]), json.loads(flows[i+1])]
-            pred = main(flow, model, dga_model, dga_model_name)
+            pred = main(flow, model, dga_model)
             if pred:
                 for i in pred:
                     if i['content'][2] == 184291113:

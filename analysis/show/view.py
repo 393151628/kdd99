@@ -61,10 +61,11 @@ class AbnormalEvent(Resource):
         event_count = event_df.groupby('timestamp')['dip'].count()
 
         # 实时数据
-        if len(event_count.index):
-            beg_time = int(event_count.index[-1])
-        else:
-            beg_time = time_strip
+        beg_time = time_strip
+        # if len(event_count.index):
+        #     beg_time = int(event_count.index[-1])
+        # else:
+        #     beg_time = time_strip
         # beg_time = int(event_count.index[-1])
         cur_count = event_count.reindex(index=[str(beg_time + i) for i in range(-59, 1)], fill_value=0)
         cst_tz = timezone('Asia/Shanghai')
