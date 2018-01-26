@@ -192,5 +192,6 @@ def my_celery(data):
                 'error_per': str(error_type[1]),
                 'timestamp': str(int(timestamp)),
                 'createdtime': str(int(time.time())),
+                'domain': error_con['domain']
             }
             Flow.objects.create(**kwargs)

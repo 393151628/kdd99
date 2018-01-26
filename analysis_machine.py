@@ -124,23 +124,27 @@ def check_res(res):
                     for dport in dport_count[dip][sip]:
                         for k in dport_count[dip][sip][dport]:
                             final_res.append({'content': k['content'],
-                                              'error_type': ['scan', 0.98]})
+                                              'error_type': ['scan', 0.98],
+                                              'domain': ''})
                 elif len(dport_count[dip][sip]) > 5:
                     for dport in dport_count[dip][sip]:
                         for k in dport_count[dip][sip][dport]:
                             final_res.append({'content': k['content'],
-                                              'error_type': ['scan', k['error_type'][1]]})
+                                              'error_type': ['scan', k['error_type'][1]],
+                                              'domain': ''})
             elif len(dport_count[dip][sip]) < len(sport_count[dip][sip]):
                 if  len(sport_count[dip][sip]) > 10:
                     for sport in sport_count[dip][sip]:
                         for k in sport_count[dip][sip][sport]:
                             final_res.append({'content': k['content'],
-                                              'error_type': ['ddos', 0.99]})
+                                              'error_type': ['ddos', 0.98],
+                                              'domain': ''})
                 elif  len(sport_count[dip][sip]) > 5:
                     for sport in sport_count[dip][sip]:
                         for k in sport_count[dip][sip][sport]:
                             final_res.append({'content': k['content'],
-                                              'error_type': ['ddos', k['error_type'][1]]})
+                                              'error_type': ['ddos', k['error_type'][1]],
+                                              'domain': ''})
             elif len(dport_count[dip][sip]) > 15:
                     for dport in dport_count[dip][sip]:
                         for k in dport_count[dip][sip][dport]:
@@ -408,15 +412,18 @@ def dga_check(flow, dga_model):
     dns_test, dns_check, dns_info, dga_res = [], [], [], []
     for event in flow:
         if event['type'] == 'dns':
-            dns_test.append(tldextract.extract(event['dns']['req_name']).domain)
+            domain = tldextract.extract(event['dns']['req_name']).domain
+            dns_test.append(domain)
             dns_info.append({'content': [event['dns']['dip'], event['dns']['dport'], event['dns']['sip'],
-                                        event['dns']['sport'], event['probe_ts']]})
+                                        event['dns']['sport'], event['probe_ts']],
+                             'domain': domain})
     if dns_test:
         dns_check = dga_train(dns_test, dga_model)
     for ival, val in enumerate(dns_check):
         if val[0] > 0.8:
             dga_res.append({'content': dns_info[ival]['content'],
-                            'error_type': ['DGA', round(val[0], 3)]})
+                            'error_type': ['DGA', round(val[0], 3)],
+                            'domain': dns_info[ival]['domain']})
     return dga_res
 
 def main(flow, model, dga_model):
@@ -425,7 +432,7 @@ def main(flow, model, dga_model):
     :param flow: list.
     :param model:
     :param df_train:
-    :return: list. [{'content':['dip', 'dport', 'sip', 'sport'], 'error_type':error_type}, ...]
+    :return: list. [{'content':['dip', 'dport', 'sip', 'sport'], 'error_type':error_type, 'domain':domain}, ...]
     '''
     global DDOS_LEN, SCAN_LEN
     flow_first_len = len(flow[0])
@@ -451,7 +458,8 @@ def main(flow, model, dga_model):
             #     print('ddos',post_info[i], probe_ts, 'error_type', [error_type[pred_max[i]], pred[i]])
             if pred_max[i] in [0, 2] and pred[i][pred_max[i]] > 0.5:
                 tmp_res.append({'content': post_info[i] + [probe_ts],
-                                'error_type': [error_type[pred_max[i]], round(float(pred[i][pred_max[i]] * seed), 3)]})
+                                'error_type': [error_type[pred_max[i]], round(float(pred[i][pred_max[i]] * seed), 3)],
+                                'domain': ''})
         if len(tmp_res) > 5:
             res = check_res(tmp_res)
     dga_res = dga_check(flow, dga_model)

@@ -52,11 +52,11 @@ class AbnormalEvent(Resource):
         event_obj = Flow.objects.filter(createdtime__gt=str(last_minute), createdtime__lte=str(time_strip))
         event_all = [
             [event.id, event.dip, event.dport, event.sip, event.sport, event.error_type, event.error_per,
-             event.createdtime]
+             event.createdtime, event.domain]
             for event in event_obj
         ]
         event_df = pd.DataFrame(event_all,
-                                columns=['id', 'dip', 'dport', 'sip', 'sport', 'error_type', 'error_per', 'timestamp'])
+                                columns=['id', 'dip', 'dport', 'sip', 'sport', 'error_type', 'error_per', 'timestamp', 'domain'])
 
         event_count = event_df.groupby('timestamp')['dip'].count()
 
@@ -104,7 +104,7 @@ class AbnormalEvent(Resource):
                                   "type": lan_ip(row[1]),
                                   "EventName": str(row[0]),
                                   "EventType": row[5],
-                                  "EventDes": '{}({}) -> {}({})'.format(row[3], row[4], row[1], row[2]),
+                                  "EventDes": '{}:{} -> {}:{}({})'.format(row[3], row[4], row[1], row[2], row[8]),
                                   "EventLevel": int(scr_level),
                                   "EventProbability": row[6],
                                   "EventDate": datetime.fromtimestamp(int(row[7])).astimezone(cst_tz).strftime(
@@ -120,7 +120,7 @@ class AbnormalEvent(Resource):
                                       "type": lan_ip(row[1]),
                                       "EventName": str(row[0]),
                                       "EventType": row[5],
-                                      "EventDes": '{}({}) -> {}({})'.format(row[3], row[4], row[1], row[2]),
+                                      "EventDes":  '{}:{} -> {}:{}({})'.format(row[3], row[4], row[1], row[2], row[8]),
                                       "EventLevel": int(scr_level),
                                       "EventProbability": row[6],
                                       "EventDate": datetime.fromtimestamp(int(row[7])).astimezone(cst_tz).strftime(

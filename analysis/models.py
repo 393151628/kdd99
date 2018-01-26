@@ -15,6 +15,7 @@ class Flow(db.Document):
     error_per = db.StringField()
     timestamp = db.StringField()
     createdtime = db.StringField()
+    domain = db.StringField()
 
     meta = {
         'collection': 'flow',
