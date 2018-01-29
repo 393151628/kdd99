@@ -45,14 +45,15 @@ class AbnormalEvent(Resource):
         logging.info(time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(time.time())) + ' : get abnormal event.')
         time_strip = int(time.mktime(time.localtime()))
         count, att, eventList = [], [], []
-        last_minute = time_strip - 60
+        last_minute = time_strip - 90
+        beg_time = time_strip - 30
         his_num = Flow.objects.filter(createdtime__gt=str(time_strip - time_strip % 86400),
                                       createdtime__lte=str(last_minute)).count()
         # logging.info('his_num: {}'.format(his_num))
-        event_obj = Flow.objects.filter(createdtime__gt=str(last_minute), createdtime__lte=str(time_strip))
+        event_obj = Flow.objects.filter(timestamp__gt=str(last_minute), timestamp__lte=str(beg_time))
         event_all = [
             [event.id, event.dip, event.dport, event.sip, event.sport, event.error_type, event.error_per,
-             event.createdtime, event.domain]
+             event.timestamp, event.domain]
             for event in event_obj
         ]
         event_df = pd.DataFrame(event_all,
@@ -61,7 +62,6 @@ class AbnormalEvent(Resource):
         event_count = event_df.groupby('timestamp')['dip'].count()
 
         # 实时数据
-        beg_time = time_strip
         # if len(event_count.index):
         #     beg_time = int(event_count.index[-1])
         # else:
