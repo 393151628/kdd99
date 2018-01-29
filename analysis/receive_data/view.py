@@ -17,12 +17,18 @@ class ReciveData(Resource):
         data = request.get_data()
         r = redis.Redis(connection_pool=configs[ENV].redis_pool, db=1)
         if r.exists('data') and r.get('data'):
-            data1 = json.loads(r.get('data'))
-            data2 = json.loads(data)
-            logging.info('send celery numbers: {0}****************{1}'.format(len(data1), len(data2)))
-            queue = [data1, data2]
-            task = my_celery.apply_async(args=[queue])
-            r.delete('data')
+            try:
+                data1 = json.loads(r.get('data'))
+                data2 = json.loads(data)
+                logging.info('send celery numbers: {0}****************{1}'.format(len(data1), len(data2)))
+                queue = [data1, data2]
+                task = my_celery.apply_async(args=[queue])
+                r.delete('data')
+            except Exception as e:
+                logging.info('---------------error--------------')
+                logging.info(e.args)
+                logging.info('---------------error--------------')
+                r.set('data', data)
         else:
             r.set('data', data)
         return 'success'
