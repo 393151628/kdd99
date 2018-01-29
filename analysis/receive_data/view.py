@@ -16,7 +16,7 @@ class ReciveData(Resource):
     def post(self):
         data = request.get_data()
         r = redis.Redis(connection_pool=configs[ENV].redis_pool, db=1)
-        if r.exists('data'):
+        if r.exists('data') and r.get('data'):
             data1 = json.loads(r.get('data'))
             data2 = json.loads(data)
             logging.info('send celery numbers: {0}****************{1}'.format(len(data1), len(data2)))

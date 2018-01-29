@@ -44,7 +44,7 @@ class AbnormalEvent(Resource):
     def get(self):
         logging.info(time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(time.time())) + ' : get abnormal event.')
         time_strip = int(time.mktime(time.localtime()))
-        count, att, eventList = [],[],[]
+        count, att, eventList = [], [], []
         last_minute = time_strip - 60
         his_num = Flow.objects.filter(createdtime__gt=str(time_strip - time_strip % 86400),
                                       createdtime__lte=str(last_minute)).count()
