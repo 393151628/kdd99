@@ -413,10 +413,11 @@ def dga_check(flow, dga_model):
     for event in flow:
         if event['type'] == 'dns':
             domain = tldextract.extract(event['dns']['req_name']).domain
-            dns_test.append(domain)
-            dns_info.append({'content': [event['dns']['dip'], event['dns']['dport'], event['dns']['sip'],
-                                        event['dns']['sport'], event['probe_ts']],
-                             'domain': domain})
+            if domain not in ['wxjuyun']:
+                dns_test.append(domain)
+                dns_info.append({'content': [event['dns']['dip'], event['dns']['dport'], event['dns']['sip'],
+                                            event['dns']['sport'], event['probe_ts']],
+                                 'domain': domain})
     if dns_test:
         dns_check = dga_train(dns_test, dga_model)
     for ival, val in enumerate(dns_check):

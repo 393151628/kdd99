@@ -204,7 +204,7 @@ geo_map = {
 def get_geo_name_by_ip(ip_addr):
     # ipaddr = '80.209.231.191'
     url = "http://www.ip138.com/ips138.asp?ip=%s&action=2" % ip_addr
-    print(url)
+    # print(url)
     u = urllib2.urlopen(url)
     s = u.read()
     # Get IP Address
@@ -212,7 +212,7 @@ def get_geo_name_by_ip(ip_addr):
     # Get IP Address Location
     result = re.findall(r'(<li>.*?</li>)', s)[0]
     country = result[9:-5].strip()
-    return geo_map.get(country, 'unknow')
+    return geo_map.get(country, 'China')
 
     # return geo_names[randint(0,200)]
 
